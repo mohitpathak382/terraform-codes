@@ -1,9 +1,8 @@
-project_id       = "arboreal-cosmos-461506-n6"
-local_cidr_block = "34.126.65.25/32"
+project_id = "arboreal-cosmos-461506-n6"
 gke_config = {
   name                    = "autopilot-cluster-t1"
-  region                  = "us-central1"
   project_id              = "arboreal-cosmos-461506-n6"
+  region                  = "us-central1"
   network                 = "projects/arboreal-cosmos-461506-n6/global/networks/gke-vpc"
   subnetwork              = "projects/arboreal-cosmos-461506-n6/regions/us-central1/subnetworks/gke-vpc-subnet"
   pod_range               = "pods-range"
@@ -14,8 +13,8 @@ gke_config = {
   master_ipv4_cidr_block  = "172.16.0.0/28"
   release_channel         = "REGULAR"
   auto_provisioning_defaults = {
-    service_account         = "default"
-    }
+    service_account = "default"
+  }
   master_authorized_networks = [
     {
       cidr_block   = "10.10.0.0/16"
@@ -23,3 +22,27 @@ gke_config = {
     }
   ]
 }
+
+vpc_config = [ {
+  auto_create_subnetworks : false,
+    description : "Private GKE Vpc",
+    firewall_rules : [],
+    network_name : "gke-vpc",
+    project_id : "arboreal-cosmos-461506-n6",
+    routes : [],
+    secondary_ranges : {
+        "gke-cluster-subnet" : [
+        { range_name : "pod", ip_cidr_range : "10.10.6.0/24" },
+        { range_name : "svc", ip_cidr_range : "10.10.7.0/24" }
+        ]
+    },
+    subnets : [
+      {
+        subnet_name : "gke-vpc-subnet",
+        subnet_ip : "10.10.0.0/16",
+        subnet_region : "us-central1",
+        subnet_private_access : true,
+      }
+    ]
+} 
+]

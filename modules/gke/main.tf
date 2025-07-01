@@ -3,9 +3,9 @@ resource "google_container_cluster" "autopilot_gke" {
   location = var.gke_config.region
   project  = var.gke_config.project_id
 
-  enable_autopilot = true
+  enable_autopilot    = var.gke_config.enable_autopilot
   deletion_protection = false
- 
+
   release_channel {
     channel = var.gke_config.release_channel
   }
@@ -19,7 +19,7 @@ resource "google_container_cluster" "autopilot_gke" {
   subnetwork = var.gke_config.subnetwork
 
   private_cluster_config {
-    enable_private_nodes    = true
+    enable_private_nodes    = var.gke_config.enable_private_nodes
     enable_private_endpoint = var.gke_config.enable_private_endpoint
     master_ipv4_cidr_block  = var.gke_config.master_ipv4_cidr_block
   }
