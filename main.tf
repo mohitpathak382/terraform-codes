@@ -23,3 +23,4 @@ module "gke" {
   machine_type     = var.machine_type
   local_cidr_block = var.local_cidr_block
 }
+
