@@ -43,7 +43,7 @@ resource "google_container_cluster" "autopilot_gke" {
 
   cluster_autoscaling {
     auto_provisioning_defaults {
-      service_account = var.gke_config.service_account
+      service_account = var.gke_config.auto_provisioning_defaults.service_account
     }
   }
 }
