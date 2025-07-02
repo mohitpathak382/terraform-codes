@@ -33,18 +33,18 @@ resource "google_sql_database_instance" "instance" {
   }
 }
 
-# resource "google_sql_user" "users" {
-#   for_each = { for u in try(var.sql_config.users, []) : u.name => u }
+resource "google_sql_user" "users" {
+  for_each = { for u in try(var.sql_config.users, []) : u.name => u }
 
-#   name     = each.value.name
-#   instance = google_sql_database_instance.instance.name
-#   password = each.value.password
-#   host     = try(each.value.host, null)
-# }
+  name     = each.value.name
+  instance = google_sql_database_instance.instance.name
+  password = each.value.password
+  host     = try(each.value.host, null)
+}
 
-# resource "google_sql_database" "databases" {
-#   for_each = toset(try(var.sql_config.databases, []))
+resource "google_sql_database" "databases" {
+  for_each = toset(try(var.sql_config.databases, []))
 
-#   name     = each.key
-#   instance = google_sql_database_instance.instance.name
-# }
+  name     = each.key
+  instance = google_sql_database_instance.instance.name
+}

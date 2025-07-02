@@ -48,29 +48,55 @@ vpc_config = [ {
 ]
 
 
+# sql_config = {
+#   project_id       = "arboreal-cosmos-461506-n6"
+#   region           = "us-central1"
+#   instance_name    = "my-cloudsql"
+#   database_version = "MYSQL_8_0"
+#   tier             = "db-f1-micro"
+
+#   private_network     = "projects/arboreal-cosmos-461506-n6/global/networks/gke-vpc"
+#   enable_public_ip    = false
+#   deletion_protection = false
+
+#   authorized_networks = []
+
+#   # users = [
+#   #   {
+#   #     name     = "admin"
+#   #     password = "supersecret"
+#   #   }
+#   # ]
+
+#   # databases = ["appdb"]
+
+#   backup_enabled         = true
+#   backup_start_time      = "03:00"
+#   point_in_time_recovery = false
+# }
+
 sql_config = {
   project_id       = "arboreal-cosmos-461506-n6"
   region           = "us-central1"
-  instance_name    = "my-cloudsql"
-  database_version = "MYSQL_8_0"
-  tier             = "db-f1-micro"
+  instance_name    = "postgres-test-instance"
+  database_version = "POSTGRES_15"
+  tier             = "db-custom-1-3840"
 
-  private_network     = "projects/arboreal-cosmos-461506-n6/global/networks/gke-vpc"
-  enable_public_ip    = false
-  deletion_protection = false
+  private_network  = "projects/arboreal-cosmos-461506-n6/global/networks/gke-vpc"
+  enable_public_ip = false
+
+  users = [
+    {
+      name     = "postgres_admin"
+      password = "strongpass123"
+    }
+  ]
+
+  databases = ["app_db"]
 
   authorized_networks = []
 
-  # users = [
-  #   {
-  #     name     = "admin"
-  #     password = "supersecret"
-  #   }
-  # ]
-
-  # databases = ["appdb"]
-
   backup_enabled         = true
   backup_start_time      = "03:00"
-  point_in_time_recovery = false
+  point_in_time_recovery = true
 }
