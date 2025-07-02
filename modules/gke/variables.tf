@@ -8,7 +8,7 @@ variable "gke_config" {
     network                = string
     subnetwork             = string
     master_ipv4_cidr_block = string
-
+    deletion_protection    = optional(string)
     enable_private_endpoint = bool
     enable_private_nodes    = bool
     release_channel         = string

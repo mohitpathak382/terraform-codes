@@ -46,3 +46,31 @@ vpc_config = [ {
     ]
 } 
 ]
+
+
+sql_config = {
+  project_id       = "arboreal-cosmos-461506-n6"
+  region           = "us-central1"
+  instance_name    = "my-cloudsql"
+  database_version = "MYSQL_8_0"
+  tier             = "db-f1-micro"
+
+  private_network     = "projects/arboreal-cosmos-461506-n6/global/networks/gke-vpc"
+  enable_public_ip    = false
+  deletion_protection = false
+
+  authorized_networks = []
+
+  # users = [
+  #   {
+  #     name     = "admin"
+  #     password = "supersecret"
+  #   }
+  # ]
+
+  # databases = ["appdb"]
+
+  backup_enabled         = true
+  backup_start_time      = "03:00"
+  point_in_time_recovery = false
+}
