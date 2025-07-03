@@ -4,7 +4,7 @@ resource "google_container_cluster" "autopilot_gke" {
   project  = var.gke_config.project_id
 
   enable_autopilot    = var.gke_config.enable_autopilot
-  deletion_protection = try(var.gke_config.deletion_protection, false)
+  deletion_protection = var.gke_config.deletion_protection
 
   release_channel {
     channel = var.gke_config.release_channel
@@ -43,7 +43,7 @@ resource "google_container_cluster" "autopilot_gke" {
 
   cluster_autoscaling {
     auto_provisioning_defaults {
-      service_account = var.gke_config.auto_provisioning_defaults.service_account
+      service_account = var.gke_config.service_account
     }
   }
 }

@@ -1,26 +1,85 @@
 project_id = "arboreal-cosmos-461506-n6"
-gke_config = {
-  name                    = "autopilot-cluster-t1"
-  project_id              = "arboreal-cosmos-461506-n6"
-  region                  = "us-central1"
-  network                 = "projects/arboreal-cosmos-461506-n6/global/networks/gke-vpc"
-  subnetwork              = "projects/arboreal-cosmos-461506-n6/regions/us-central1/subnetworks/gke-vpc-subnet"
-  pod_range               = "pods-range"
-  service_range           = "services-range"
-  enable_autopilot        = true
-  enable_private_endpoint = true
-  enable_private_nodes    = true
-  master_ipv4_cidr_block  = "172.16.0.0/28"
-  release_channel         = "REGULAR"
-  auto_provisioning_defaults = {
-    service_account = "default"
+# gke_config = {
+#   name                    = "autopilot-cluster-t1"
+#   project_id              = "arboreal-cosmos-461506-n6"
+#   region                  = "us-central1"
+#   network                 = "projects/arboreal-cosmos-461506-n6/global/networks/gke-vpc"
+#   subnetwork              = "projects/arboreal-cosmos-461506-n6/regions/us-central1/subnetworks/gke-vpc-subnet"
+#   pod_range               = "pods-range"
+#   service_range           = "services-range"
+#   enable_autopilot        = true
+#   enable_private_endpoint = true
+#   enable_private_nodes    = true
+#   master_ipv4_cidr_block  = "172.16.0.0/28"
+#   release_channel         = "REGULAR"
+#   auto_provisioning_defaults = {
+#     service_account = "default"
+#   }
+#   master_authorized_networks = [
+#     {
+#       cidr_block   = "10.10.0.0/16"
+#       display_name = "vpc-cider-range"
+#     }
+#   ]
+# }
+
+project_ids = [
+  "arboreal-cosmos-461506-n6"
+]
+
+regions = [
+  "us-central1"
+]
+
+project_network_map = {
+  "arboreal-cosmos-461506-n6" = {
+    network    = "projects/arboreal-cosmos-461506-n6/global/networks/gke-vpc"
+    subnetwork = "projects/arboreal-cosmos-461506-n6/regions/us-central1/subnetworks/gke-vpc-subnet"
   }
-  master_authorized_networks = [
-    {
-      cidr_block   = "10.10.0.0/16"
-      display_name = "vpc-cider-range"
-    }
-  ]
+}
+
+common_config = {
+  name_prefix             = "autopilot-cluster-t1"
+  release_channel         = "REGULAR"
+  enable_autopilot        = true
+  enable_private_nodes    = true
+  enable_private_endpoint = true
+  deletion_protection     = false
+}
+
+pod_range_map = {
+  "arboreal-cosmos-461506-n6" = {
+    "us-central1" = "pods-range"
+  }
+}
+
+service_range_map = {
+  "arboreal-cosmos-461506-n6" = {
+    "us-central1" = "services-range"
+  }
+}
+
+master_cidr_map = {
+  "arboreal-cosmos-461506-n6" = {
+    "us-central1" = "172.16.0.0/28"
+  }
+}
+
+authorized_networks_map = {
+  "arboreal-cosmos-461506-n6" = {
+    "us-central1" = [
+      {
+        cidr_block   = "10.10.0.0/16"
+        display_name = "vpc-cider-range"
+      }
+    ]
+  }
+}
+
+service_account_map = {
+  "arboreal-cosmos-461506-n6" = {
+    "us-central1" = "default"
+  }
 }
 
 vpc_config = [ {
@@ -75,28 +134,29 @@ vpc_config = [ {
 #   point_in_time_recovery = false
 # }
 
-sql_config = {
-  project_id       = "arboreal-cosmos-461506-n6"
-  region           = "us-central1"
-  instance_name    = "postgres-test-instance"
-  database_version = "POSTGRES_15"
-  tier             = "db-custom-1-3840"
+# sql_config = {
+#   project_id       = "arboreal-cosmos-461506-n6"
+#   region           = "us-central1"
+#   instance_name    = "postgres-test-instance"
+#   database_version = "POSTGRES_15"
+#   tier             = "db-custom-1-3840"
 
-  private_network  = "projects/arboreal-cosmos-461506-n6/global/networks/gke-vpc"
-  enable_public_ip = false
+#   private_network  = "projects/arboreal-cosmos-461506-n6/global/networks/gke-vpc"
+#   enable_public_ip = false
+#   deletion_protection = false
 
-  users = [
-    {
-      name     = "postgres_admin"
-      password = "strongpass123"
-    }
-  ]
+#   users = [
+#     {
+#       name     = "postgres_admin"
+#       password = "strongpass123"
+#     }
+#   ]
 
-  databases = ["app_db"]
+#   databases = ["app_db"]
 
-  authorized_networks = []
+#   authorized_networks = []
 
-  backup_enabled         = true
-  backup_start_time      = "03:00"
-  point_in_time_recovery = true
-}
+#   backup_enabled         = true
+#   backup_start_time      = "03:00"
+#   point_in_time_recovery = true
+# }
