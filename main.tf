@@ -28,6 +28,7 @@ module "gke_clusters" {
     master_authorized_networks = each.value.master_authorized_networks
     service_account            = each.value.service_account
   }
+  depends_on = [ module.network ]
 }
 
 
