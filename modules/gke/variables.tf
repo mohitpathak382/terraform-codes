@@ -1,5 +1,5 @@
 variable "gke_config" {
-  description = "Configuration for GKE private cluster"
+  description = "Configuration for the GKE cluster"
   type = object({
     project_id                 = string
     region                     = string
@@ -19,5 +19,7 @@ variable "gke_config" {
       display_name = string
     }))
     service_account = optional(string)
+    enable_binary_authorization = bool
+    binary_authorization_mode  = string
   })
 }

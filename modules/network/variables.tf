@@ -1,8 +1,8 @@
 variable "vpc_config" {
   description = "List of configuration for VPC"
-  type =object({
-    auto_create_subnetworks                = optional(bool)
-    description                            = optional(string)
+  type = object({
+    auto_create_subnetworks = optional(bool)
+    description             = optional(string)
 
     firewall_rules = optional(list(object({
       name        = string

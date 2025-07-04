@@ -63,10 +63,10 @@ resource "google_compute_route" "routes" {
     route.name => route
   }
 
-  name            = each.value.name
-  dest_range      = each.value.dest
-  network         = google_compute_network.vpc.name
-  project         = var.vpc_config.project_id
+  name       = each.value.name
+  dest_range = each.value.dest
+  network    = google_compute_network.vpc.name
+  project    = var.vpc_config.project_id
 
   next_hop_ip       = lookup(each.value, "next_hop_ip", null)
   next_hop_instance = lookup(each.value, "next_hop_instance", null)

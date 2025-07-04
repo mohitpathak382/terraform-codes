@@ -1,7 +1,3 @@
-variable "project_id" {
-  description = "The id of the GCP Project"
-  type        = string
-}
 
 # variable "gke_config" {
 #   description = "Configuration for GKE private cluster"
@@ -30,9 +26,9 @@ variable "project_id" {
 
 variable "vpc_config" {
   description = "List of configuration for VPC"
-  type =list(object({
-    auto_create_subnetworks                = optional(bool)
-    description                            = optional(string)
+  type = list(object({
+    auto_create_subnetworks = optional(bool)
+    description             = optional(string)
 
     firewall_rules = optional(list(object({
       name        = string
@@ -112,61 +108,60 @@ variable "vpc_config" {
 #   })
 # }
 
-variable "project_ids" {
-  description = "List of GCP project IDs"
-  type        = list(string)
-}
+# variable "project_ids" {
+#   description = "List of GCP project IDs"
+#   type        = list(string)
+# }
 
-variable "regions" {
-  description = "List of regions where GKE clusters will be deployed"
-  type        = list(string)
-}
+# variable "regions" {
+#   description = "List of regions where GKE clusters will be deployed"
+#   type        = list(string)
+# }
 
-variable "project_network_map" {
-  description = "Map of project_id to its VPC and subnet names"
-  type = map(object({
-    network    = string
-    subnetwork = string
-  }))
-}
+# variable "project_network_map" {
+#   description = "Map of project_id to its VPC and subnet names"
+#   type = map(object({
+#     network    = string
+#     subnetwork = string
+#   }))
+# }
 
-variable "common_config" {
-  description = "Common GKE configuration"
-  type = object({
-    name_prefix             = string
-    release_channel         = string
-    enable_autopilot        = bool
-    enable_private_nodes    = bool
-    enable_private_endpoint = bool
-    deletion_protection     = optional(bool)
-  })
-}
+# variable "common_config" {
+#   description = "Common GKE configuration"
+#   type = object({
+#     name_prefix             = string
+#     release_channel         = string
+#     enable_autopilot        = bool
+#     enable_private_nodes    = bool
+#     enable_private_endpoint = bool
+#     deletion_protection     = optional(bool)
+#   })
+# }
 
-variable "pod_range_map" {
-  description = "Map of project_id => region => pod range"
-  type = map(map(string))
-}
+# variable "pod_range_map" {
+#   description = "Map of project_id => region => pod range"
+#   type = map(map(string))
+# }
 
-variable "service_range_map" {
-  description = "Map of project_id => region => service range"
-  type = map(map(string))
-}
+# variable "service_range_map" {
+#   description = "Map of project_id => region => service range"
+#   type = map(map(string))
+# }
 
-variable "master_cidr_map" {
-  description = "Map of project_id => region => master IPv4 CIDR block"
-  type = map(map(string))
-}
+# variable "master_cidr_map" {
+#   description = "Map of project_id => region => master IPv4 CIDR block"
+#   type = map(map(string))
+# }
 
-variable "authorized_networks_map" {
-  description = "Map of project_id => region => list of authorized networks"
-  type = map(map(list(object({
-    cidr_block   = string
-    display_name = string
-  }))))
-}
+# variable "authorized_networks_map" {
+#   description = "Map of project_id => region => list of authorized networks"
+#   type = map(map(list(object({
+#     cidr_block   = string
+#     display_name = string
+#   }))))
+# }
 
-variable "service_account_map" {
-  description = "Map of project_id => region => service account email"
-  type = map(map(string))
-}
-
+# variable "service_account_map" {
+#   description = "Map of project_id => region => service account email"
+#   type = map(map(string))
+# }
