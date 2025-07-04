@@ -1,8 +1,8 @@
 resource "google_sql_database_instance" "instance" {
-  name             = var.sql_config.instance_name
-  project          = var.sql_config.project_id
-  region           = var.sql_config.region
-  database_version = var.sql_config.database_version
+  name                = var.sql_config.instance_name
+  project             = var.sql_config.project_id
+  region              = var.sql_config.region
+  database_version    = var.sql_config.database_version
   deletion_protection = try(var.sql_config.deletion_protection, false)
 
   settings {
@@ -37,7 +37,7 @@ resource "google_sql_user" "users" {
   for_each = { for u in try(var.sql_config.users, []) : u.name => u }
 
   name     = each.value.name
-  project          = var.sql_config.project_id
+  project  = var.sql_config.project_id
   instance = google_sql_database_instance.instance.name
   password = each.value.password
   host     = try(each.value.host, null)
@@ -47,6 +47,6 @@ resource "google_sql_database" "databases" {
   for_each = toset(try(var.sql_config.databases, []))
 
   name     = each.key
-  project          = var.sql_config.project_id
+  project  = var.sql_config.project_id
   instance = google_sql_database_instance.instance.name
-}
+}  
