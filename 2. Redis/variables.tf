@@ -11,7 +11,7 @@ variable "redis_project_configs" {
       shard_count   = number
       replica_count = optional(number)
       node_type     = optional(string)
-      psc_networks  = optional(list(string))
+      # psc_networks  = optional(list(string))
       redis_config  = optional(map(string))
       persistence   = optional(object({
         mode = string
