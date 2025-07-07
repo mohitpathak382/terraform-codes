@@ -6,8 +6,8 @@ locals {
         project_id = project_id
         region = region
         name = "${var.common_redis_config.name_prefix}-${project_id}-${region}"
-        network = "projects/${project_id}/global/networks/${project_config.network_name}"
-        psc_networks = try(project_config.region_configs[region].psc_networks, ["projects/${project_id}/global/networks/${project_config.network_name}"])
+        network = try(project_config.region_configs[region].psc_networks, ["projects/${project_id}/global/networks/${project_config.network_name}"])
+        # psc_networks = try(project_config.region_configs[region].psc_networks, ["projects/${project_id}/global/networks/${project_config.network_name}"])
         shard_count = project_config.region_configs[region].shard_count
         replica_count = try(project_config.region_configs[region].replica_count, var.common_redis_config.replica_count)
         node_type = try(project_config.region_configs[region].node_type, var.common_redis_config.node_type)

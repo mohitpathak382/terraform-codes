@@ -47,3 +47,20 @@ resource "google_redis_cluster" "cluster" {
     }
   }
 }
+
+# resource "google_network_connectivity_service_connection_policy" "psc_policy" {
+#   name          = "${var.redis_cluster_config.name}-psc"
+#   project       = var.redis_cluster_config.project_id
+#   location      = var.redis_cluster_config.region
+#   service_class = "gcp-memorystore-redis"
+#   network       = regex("(projects/.*/global/networks/.+)", var.redis_cluster_config.subnetwork)[0]
+#   psc_config {
+#     subnetworks = [var.redis_cluster_config.subnetwork]
+#   }
+#   depends_on = [google_project_service.enable_redis]
+# }
+# resource "google_project_service" "enable_redis" {
+#   for_each = toset([for env, cfg in var.deployment_matrix : cfg.project_id])
+#   project  = each.key
+#   service  = "redis.googleapis.com"
+# }

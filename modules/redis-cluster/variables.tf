@@ -4,7 +4,7 @@ variable "cluster" {
     project_id    = string
     region        = string
     name          = string
-    psc_networks  = list(string)
+    # psc_networks  = list(string)
     shard_count   = number
     replica_count = number
     node_type     = string
