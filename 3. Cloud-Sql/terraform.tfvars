@@ -4,7 +4,7 @@ common_sql_config = {
   disk_size              = 10
   availability_type      = "ZONAL"
   activation_policy      = "ALWAYS"
-  enable_public_ip       = false
+  enable_public_ip       = true
   deletion_protection    = false
   backup_enabled         = true
   backup_start_time      = "03:00"
@@ -22,8 +22,8 @@ common_sql_config = {
 }
 
 sql_project_configs = {
-  "free-tier-project" = {
-    network_name = "default"
+  "arboreal-cosmos-461506-n6" = {
+    network_name = ""
     regions = {
       "us-central1" = {
         database_versions = ["POSTGRES_15"]
@@ -31,22 +31,12 @@ sql_project_configs = {
           {
             name  = "corp"
             value = "203.0.113.0/24"
-          },
-          {
-            name  = "vpn"
-            value = "10.10.0.0/16"
           }
         ]
       }
 
       "us-east1" = {
         database_versions = ["POSTGRES_15"]
-        authorized_networks = [
-          {
-            name  = "dev-laptop"
-            value = "192.168.1.0/24"
-          }
-        ]
       }
     }
   }

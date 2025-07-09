@@ -1,16 +1,16 @@
 variable "common_sql_config" {
   description = "Common config shared by all SQL instances"
   type = object({
-    tier                     = string
-    availability_type        = optional(string)
-    disk_type                = optional(string)
-    disk_size                = optional(number)
-    activation_policy        = optional(string)
-    deletion_protection      = optional(bool)
-    enable_public_ip         = optional(bool)
-    backup_enabled           = optional(bool)
-    backup_start_time        = optional(string)
-    point_in_time_recovery   = optional(bool)
+    tier                   = string
+    availability_type      = optional(string)
+    disk_type              = optional(string)
+    disk_size              = optional(number)
+    activation_policy      = optional(string)
+    deletion_protection    = optional(bool)
+    enable_public_ip       = optional(bool)
+    backup_enabled         = optional(bool)
+    backup_start_time      = optional(string)
+    point_in_time_recovery = optional(bool)
 
     users = optional(list(object({
       name     = string
