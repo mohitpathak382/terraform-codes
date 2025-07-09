@@ -3,7 +3,7 @@ module "cloud_sql_instances" {
     for cfg in local.sql_instance_configs : cfg.instance_key => cfg
   }
 
-  source = "./modules/sql"
+  source = "../modules/sql"
 
   sql_config = merge(
     var.common_sql_config,
