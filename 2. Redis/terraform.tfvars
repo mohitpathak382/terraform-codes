@@ -8,9 +8,7 @@ redis_project_configs = {
         shard_count   = 1
         replica_count = 0
         node_type     = "REDIS_SHARED_CORE_NANO"
-        # psc_networks  = [
-        #   "projects/arboreal-cosmos-461506-n6/global/networks/gke-vpc"
-        # ]
+        subnet = "gke-subnet"
       }
     }
   }

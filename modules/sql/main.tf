@@ -17,12 +17,12 @@ resource "google_sql_database_instance" "instance" {
       private_network = try(var.sql_config.private_network, null)
 
       dynamic "authorized_networks" {
-  for_each = var.sql_config.authorized_networks != null ? var.sql_config.authorized_networks : []
-  content {
-    name  = authorized_networks.value.name
-    value = authorized_networks.value.value
-  }
-}
+        for_each = var.sql_config.authorized_networks != null ? var.sql_config.authorized_networks : []
+        content {
+          name  = authorized_networks.value.name
+          value = authorized_networks.value.value
+        }
+      }
 
     }
 
