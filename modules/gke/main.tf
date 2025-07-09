@@ -1,7 +1,7 @@
 resource "google_container_cluster" "pvt-cluster" {
-  project  = var.gke_config.project_id
-  location = var.gke_config.region
-  name     = var.gke_config.name
+  project    = var.gke_config.project_id
+  location   = var.gke_config.region
+  name       = var.gke_config.name
   network    = var.gke_config.network
   subnetwork = var.gke_config.subnetwork
   release_channel {

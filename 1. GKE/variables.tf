@@ -6,8 +6,11 @@ variable "gke_project_configs" {
     pods_range_name     = string
     services_range_name = string
     regions = map(object({
-      master_cidr     = string
-      service_account = string
+      subnet_name         = string
+      pods_range_name     = string
+      services_range_name = string
+      master_cidr         = string
+      service_account     = string
       authorized_networks = list(object({
         cidr_block   = string
         display_name = string

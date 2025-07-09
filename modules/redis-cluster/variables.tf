@@ -1,9 +1,9 @@
 variable "cluster" {
   description = "Core configuration for the Redis cluster"
   type = object({
-    project_id    = string
-    region        = string
-    name          = string
+    project_id = string
+    region     = string
+    name       = string
     # psc_networks  = list(string)
     shard_count   = number
     replica_count = number

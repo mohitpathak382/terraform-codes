@@ -3,7 +3,7 @@ resource "google_redis_cluster" "cluster" {
   project       = var.cluster.project_id
   shard_count   = var.cluster.shard_count
   replica_count = var.cluster.replica_count
-  region  = var.cluster.region  
+  region        = var.cluster.region
   node_type     = var.cluster.node_type
 
   dynamic "psc_configs" {

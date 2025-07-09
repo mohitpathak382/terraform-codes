@@ -6,9 +6,9 @@ module "redis_clusters" {
   }
 
   cluster = {
-    project_id    = each.value.project_id
-    region        = each.value.region
-    name          = each.value.name
+    project_id = each.value.project_id
+    region     = each.value.region
+    name       = each.value.name
     # psc_networks  = each.value.psc_networks
     shard_count   = each.value.shard_count
     replica_count = each.value.replica_count

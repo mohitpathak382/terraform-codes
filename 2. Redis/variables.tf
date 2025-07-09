@@ -12,8 +12,8 @@ variable "redis_project_configs" {
       replica_count = optional(number)
       node_type     = optional(string)
       # psc_networks  = optional(list(string))
-      redis_config  = optional(map(string))
-      persistence   = optional(object({
+      redis_config = optional(map(string))
+      persistence = optional(object({
         mode = string
       }))
       security = optional(object({
@@ -42,7 +42,7 @@ variable "common_redis_config" {
     replica_count = number
     node_type     = string
     redis_config  = map(string)
-    persistence   = object({
+    persistence = object({
       mode = string
     })
     security = object({
