@@ -5,7 +5,7 @@ resource "google_redis_cluster" "cluster" {
   replica_count = var.cluster.replica_count
   region        = var.cluster.region
   node_type     = var.cluster.node_type
-
+  deletion_protection_enabled = false
   dynamic "psc_configs" {
     for_each = local.psc_configs
     content {
@@ -16,8 +16,7 @@ resource "google_redis_cluster" "cluster" {
   transit_encryption_mode = local.security_config.transit_encryption_mode
 
   zone_distribution_config {
-    mode = "SINGLE_ZONE"
-    zone = "${var.cluster.region}-a"
+    mode = "MULTI_ZONE"
   }
 
   dynamic "automated_backup_config" {
@@ -48,19 +47,14 @@ resource "google_redis_cluster" "cluster" {
   }
 }
 
-# resource "google_network_connectivity_service_connection_policy" "psc_policy" {
-#   name          = "${var.redis_cluster_config.name}-psc"
-#   project       = var.redis_cluster_config.project_id
-#   location      = var.redis_cluster_config.region
-#   service_class = "gcp-memorystore-redis"
-#   network       = regex("(projects/.*/global/networks/.+)", var.redis_cluster_config.subnetwork)[0]
-#   psc_config {
-#     subnetworks = [var.redis_cluster_config.subnetwork]
-#   }
-#   depends_on = [google_project_service.enable_redis]
-# }
-# resource "google_project_service" "enable_redis" {
-#   for_each = toset([for env, cfg in var.deployment_matrix : cfg.project_id])
-#   project  = each.key
-#   service  = "redis.googleapis.com"
-# }
+resource "google_network_connectivity_service_connection_policy" "psc_policy" {
+  name          = "${var.cluster.name}-psc"
+  project       = var.cluster.project_id
+  location      = var.cluster.region
+  service_class = "gcp-memorystore-redis"
+  network       = var.network.psc_networks[0]
+
+  psc_config {
+    subnetworks = [var.subnetwork]
+  }
+}

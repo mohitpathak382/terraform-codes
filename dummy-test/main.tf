@@ -1,6 +1,6 @@
 module "network" {
   for_each   = { for vpc in var.vpc_config : vpc.network_name => vpc }
-  source     = "./modules/network"
+  source     = "../modules/network"
   vpc_config = each.value
 }
 

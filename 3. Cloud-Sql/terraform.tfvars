@@ -23,16 +23,11 @@ common_sql_config = {
 
 sql_project_configs = {
   "arboreal-cosmos-461506-n6" = {
-    network_name = ""
+    network_name = "gke-vpc"
     regions = {
       "us-central1" = {
-        database_versions = ["POSTGRES_15"]
-        authorized_networks = [
-          {
-            name  = "corp"
-            value = "203.0.113.0/24"
-          }
-        ]
+        database_versions = ["POSTGRES_15","MYSQL_8_0"]
+        authorized_networks = []
       }
 
       "us-east1" = {

@@ -4,33 +4,12 @@ variable "regions" {
 }
 
 variable "redis_project_configs" {
-  description = "Map of Redis project configurations including network and region settings"
+  description = "Map of Redis project configurations including network and region-specific shard/subnetwork settings"
   type = map(object({
     network_name = string
     region_configs = map(object({
-      shard_count   = number
-      replica_count = optional(number)
-      node_type     = optional(string)
-      # psc_networks  = optional(list(string))
-      redis_config = optional(map(string))
-      persistence = optional(object({
-        mode = string
-      }))
-      security = optional(object({
-        transit_encryption_mode = optional(string)
-      }))
-      backup = optional(object({
-        automated = optional(object({
-          retention_days = optional(string)
-          start_hour     = optional(number)
-        }))
-      }))
-      maintenance = optional(object({
-        weekly_windows = optional(list(object({
-          day        = string
-          start_hour = number
-        })))
-      }))
+      shard_count     = number
+      subnet = string
     }))
   }))
 }

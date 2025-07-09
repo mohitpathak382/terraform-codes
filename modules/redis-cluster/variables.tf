@@ -18,6 +18,12 @@ variable "network" {
   })
 }
 
+variable "subnetwork" {
+  description = "Subnetwork to be used for PSC service connection policy"
+  type        = string
+}
+
+
 variable "redis_config" {
   description = "Custom Redis configuration"
   type        = map(string)
@@ -63,3 +69,5 @@ variable "maintenance" {
   })
   default = {}
 }
+
+
