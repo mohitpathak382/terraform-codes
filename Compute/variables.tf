@@ -19,13 +19,3 @@ variable "frontend_config" {
     labels            = map(string)
   })
 }
-
-variable "backend_config" {
-  type = object({
-    count             = number
-    machine_type      = string
-    startup_script    = string
-    tags              = list(string)
-    labels            = map(string)
-  })
-}
