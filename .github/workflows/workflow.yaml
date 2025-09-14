@@ -66,7 +66,6 @@ jobs:
 
       - name: Load secrets dynamically and build tfvars
         env:
-          # Pass all GitHub secrets as JSON - GitHub will automatically mask values in logs
           ALL_SECRETS: ${{ toJSON(secrets) }}
         run: |
           if [ ! -f "secret-manager-config.json" ]; then
