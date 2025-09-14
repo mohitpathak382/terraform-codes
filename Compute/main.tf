@@ -16,7 +16,7 @@ module "frontend" {
   machine_type = var.frontend_config.machine_type
   image      = "projects/debian-cloud/global/images/debian-12-bookworm-v20250910"
   subnetwork = var.subnetwork
-  metadata_startup_script = file(var.frontend_config.startup_script)
+  # metadata_startup_script = file(var.frontend_config.startup_script)
   tags       = var.frontend_config.tags
   labels     = var.frontend_config.labels
 }
