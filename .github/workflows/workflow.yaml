@@ -82,22 +82,24 @@ jobs:
           echo "Required secrets found in config: $(echo $SECRET_NAMES | tr '\n' ' ')"
           
           # Build the dynamic_secrets.tfvars file
-          echo "dynamic_secrets = {" > dynamic_secrets.tfvars
+          TFVARS_FILE="secret-manager/dynamic_secrets.auto.tfvars"
+          echo "dynamic_secrets = {" > "$TFVARS_FILE"
+          # echo "dynamic_secrets = {" > dynamic_secrets.tfvars
           
           for secret_name in $SECRET_NAMES; do
             # Extract secret value from the JSON using jq
             secret_value=$(echo "$ALL_SECRETS" | jq -r --arg key "$secret_name" '.[$key] // empty')
             
             if [ -n "$secret_value" ] && [ "$secret_value" != "null" ] && [ "$secret_value" != "" ]; then
-              echo "  \"$secret_name\" = \"$secret_value\"" >> dynamic_secrets.tfvars
+              echo "  \"$secret_name\" = \"$secret_value\"" >> $TFVARS_FILE
               echo "✓ Loaded secret: $secret_name"
             else
               echo "⚠️  Warning: Secret $secret_name is not available in GitHub secrets"
-              echo "  \"$secret_name\" = \"\"" >> dynamic_secrets.tfvars
+              echo "  \"$secret_name\" = \"\"" >> $TFVARS_FILE
             fi
           done
           
-          echo "}" >> dynamic_secrets.tfvars
+          echo "}" >> $TFVARS_FILE
           
           echo "Generated dynamic_secrets.tfvars successfully with $(echo $SECRET_NAMES | wc -w) secrets"
 
@@ -109,7 +111,7 @@ jobs:
             cd $folder
             terraform fmt -recursive .
             terraform init
-            terraform plan -var-file="../dynamic_secrets.tfvars" -out=tfplan
+            terraform plan -out=tfplan
             cd -
           done
 
@@ -154,24 +156,26 @@ jobs:
           echo "Required secrets found in config: $(echo $SECRET_NAMES | tr '\n' ' ')"
           
           # Build the dynamic_secrets.tfvars file
-          echo "dynamic_secrets = {" > dynamic_secrets.tfvars
+          TFVARS_FILE="secret-manager/dynamic_secrets.auto.tfvars"
+          echo "dynamic_secrets = {" > "$TFVARS_FILE" 
+          # echo "dynamic_secrets = {" > dynamic_secrets.tfvars
           
           for secret_name in $SECRET_NAMES; do
             # Extract secret value from the JSON using jq
             secret_value=$(echo "$ALL_SECRETS" | jq -r --arg key "$secret_name" '.[$key] // empty')
             
             if [ -n "$secret_value" ] && [ "$secret_value" != "null" ] && [ "$secret_value" != "" ]; then
-              echo "  \"$secret_name\" = \"$secret_value\"" >> dynamic_secrets.tfvars
+              echo "  \"$secret_name\" = \"$secret_value\"" >> $TFVARS_FILE
               echo "✓ Loaded secret: $secret_name"
             else
               echo "⚠️  Warning: Secret $secret_name is not available in GitHub secrets"
-              echo "  \"$secret_name\" = \"\"" >> dynamic_secrets.tfvars
+              echo "  \"$secret_name\" = \"\"" >> $TFVARS_FILE
             fi
           done
           
-          echo "}" >> dynamic_secrets.tfvars
+          echo "}" >> $TFVARS_FILE  
           
-          echo "Generated dynamic_secrets.tfvars successfully with $(echo $SECRET_NAMES | wc -w) secrets"
+          echo "Generated $TFVARS_FILE successfully with $(echo $SECRET_NAMES | wc -w) secrets"
 
       - name: Terraform Apply
         run: |
@@ -182,6 +186,6 @@ jobs:
             echo "Applying changes in folder: $folder"
             cd $folder
             terraform init
-            terraform apply -var-file="../dynamic_secrets.tfvars" -auto-approve
+            terraform apply -auto-approve
             cd -
           done

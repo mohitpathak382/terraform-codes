@@ -8,7 +8,7 @@ variable "dynamic_secrets" {
 resource "google_secret_manager_secret" "dynamic_secrets" {
   for_each  = var.dynamic_secrets
  
-  project   = "quantiphi-test-470710"
+  project   = var.project_id 
   secret_id = each.key
 
   replication {
