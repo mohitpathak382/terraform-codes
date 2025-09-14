@@ -1,9 +1,9 @@
- name: 'IaC Workflow | Terraform'
+name: 'IaC Workflow | Terraform'
 
 on:
   pull_request:
     branches:
-      - main  # Trigger when a PR is created or updated targeting main branch
+      - main
     types:
       - opened
       - closed
@@ -23,9 +23,6 @@ jobs:
     name: 'Terraform | Plan'
     runs-on: ubuntu-latest
 
-    outputs:
-      changed_files: ${{ steps.changed-dirs-files.outputs.FOLDER_LIST }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,170 +39,12 @@ jobs:
         with:
           terraform_version: '1.5.7'
 
-      - name: Get list of changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v46
-        with:
-          files_ignore: |
-            .github/**
-          files: |
-            **.tf
-            **.tfvars  
-
-      - name: Get list of changed top-level directories
-        id: changed-dirs-files
-        env:
-          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
-        run: |
-          echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | sed 's|\(.*\)/.*|\1|' | sort -u > changed-dirs.txt
-          FOLDER=$(cat changed-dirs.txt | sort -u | tr '\n' ' ')
-          echo "FOLDER_LIST=$FOLDER"
-          echo "FOLDER_LIST=$FOLDER" >> $GITHUB_OUTPUT
-
-      # - name: Load and Process Application Secrets
-      #   id: process-secrets
-      #   run: |
-      #     # Load the JSON configuration (assuming secrets-config.json exists in repo root)
-      #     if [ -f "secrets-config.json" ]; then
-      #       CONFIG=$(cat secrets-config.json)
-      #       echo "Processing application secrets from JSON config..."
-            
-      #       # Create a temporary script to set environment variables dynamically
-      #       cat > set_secrets.sh << 'EOF'
-      #       #!/bin/bash
-      #       CONFIG='$1'
-            
-      #       # Parse JSON and create TF_VAR environment variables for all secrets
-      #       echo "$CONFIG" | jq -r 'keys[]' | while read app; do
-      #         echo "Processing application: $app"
-              
-      #         # Get secrets array for this application  
-      #         secrets_array=$(echo "$CONFIG" | jq -r ".\"$app\"[]")
-              
-      #         # Process each secret in the array
-      #         for secret_name in $secrets_array; do
-      #           echo "Setting TF_VAR_$secret_name"
-                
-      #           # Use indirect variable expansion to get the secret value
-      #           secret_value_var="SECRETS_${secret_name}"
-      #           secret_value="${!secret_value_var}"
-                
-      #           if [ -n "$secret_value" ]; then
-      #             echo "TF_VAR_$secret_name=$secret_value" >> $GITHUB_ENV
-      #             export "TF_VAR_$secret_name=$secret_value"
-      #           else
-      #             echo "Warning: Secret $secret_name not found in environment"
-      #           fi
-      #         done
-      #       done
-      #       EOF
-            
-      #       chmod +x set_secrets.sh
-            
-      #       # Set all secrets as environment variables with SECRETS_ prefix for the script
-      #       echo "$CONFIG" | jq -r 'keys[]' | while read app; do
-      #         secrets_array=$(echo "$CONFIG" | jq -r ".\"$app\"[]")
-      #         for secret_name in $secrets_array; do
-      #         # Create environment variable that can be accessed by the script
-      #           echo "SECRETS_${secret_name}=\${{ secrets.${secret_name} }}" >> secrets_env.txt
-      #         done
-      #       done
-            
-      #       # Export the config for next steps
-      #       echo "config<<EOF" >> $GITHUB_OUTPUT
-      #       echo "$CONFIG" >> $GITHUB_OUTPUT
-      #       echo "EOF" >> $GITHUB_OUTPUT
-      #     else
-      #       echo "No secrets-config.json found, skipping dynamic secret processing"
-      #     fi
-
-      # - name: Set Dynamic Environment Variables
-      #   run: |
-      #     CONFIG='${{ steps.process-secrets.outputs.config }}'
-          
-      #     if [ -n "$CONFIG" ]; then
-      #       # Process each application and secret dynamically
-      #       echo "$CONFIG" | jq -r 'keys[]' | while read app; do
-      #         echo "Setting environment variables for application: $app"
-              
-      #         secrets_array=$(echo "$CONFIG" | jq -r ".\"$app\"[]")
-      #         for secret_name in $secrets_array; do
-      #           echo "Setting TF_VAR_$secret_name"
-      #           echo "TF_VAR_$secret_name=\${{ secrets.$secret_name }}" >> $GITHUB_ENV
-      #         done
-      #       done
-      #     fi
-
       - name: Terraform Init & Plan
         env:
-          # Existing static secrets
           TF_VAR_my_preshared_secret: "${{ secrets.MY_PRESHARED_SECRET }}"
           TF_VAR_palo_ssh_key: "${{ secrets.TF_VAR_PALO_SSH_KEY }}"
           TF_VAR_mysql_root_password: "${{ secrets.MYSQL_ROOT_PASSWORD }}"
           TF_VAR_postgres_root_password: "${{ secrets.POSTGRES_ROOT_PASSWORD }}"
-
         run: |
-           FOLDER_LIST=$(echo "${{ steps.changed-dirs-files.outputs.FOLDER_LIST }}" | tr ' ' '\n')
-           for folder in $FOLDER_LIST; 
-           do
-             echo "Processing folder: $folder"
-             cd $folder
-             terraform fmt -recursive .
-             terraform init
-             terraform plan -out=tfplan
-             cd -   
-           done
-
-  terraform_apply:
-    name: 'Terraform | Apply'
-    runs-on: ubuntu-latest
-    needs: [terraform_plan]
-    if: ${{github.event.pull_request.merged == true }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - id: auth
-        uses: google-github-actions/auth@v2.0.0  
-        with:
-          workload_identity_provider: ${{ env.WIF_PROVIDER }}
-          service_account: ${{ env.SA }}
-          access_token_lifetime: ${{ env.ACCESS_TOKEN_LIFETIME }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: '1.5.7'
-
-      - name: Terraform Apply
-        env:
-          # Existing static secrets
-          TF_VAR_my_preshared_secret: "${{ secrets.MY_PRESHARED_SECRET }}"
-          TF_VAR_palo_ssh_key: "${{ secrets.TF_VAR_PALO_SSH_KEY }}"
-          TF_VAR_mysql_root_password: "${{ secrets.MYSQL_ROOT_PASSWORD }}"
-          TF_VAR_postgres_root_password: "${{ secrets.POSTGRES_ROOT_PASSWORD }}"
-
-        run: |
-          # Dynamically set all secrets from JSON config again for apply step
-          if [ -f "secrets-config.json" ]; then
-            CONFIG=$(cat secrets-config.json)
-            echo "$CONFIG" | jq -r 'keys[]' | while read app; do
-              secrets_array=$(echo "$CONFIG" | jq -r ".\"$app\"[]")
-              for secret_name in $secrets_array; do
-                # This is a limitation - we need to reference secrets in a different way
-                # The dynamic approach requires a different strategy
-                echo "Processing $secret_name for Terraform"
-              done
-            done
-          fi
-          
-          FOLDER_LIST=$(echo "${{ needs.terraform_plan.outputs.changed_files }}" | tr ' ' '\n')
-          for folder in $FOLDER_LIST; 
-          do
-            echo "Applying changes in folder: $folder"
-            cd $folder
-            terraform init
-            terraform apply -auto-approve
-            cd -
-          done
+          terraform init
+          terraform plan
