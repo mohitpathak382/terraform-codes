@@ -1,4 +1,4 @@
-name: 'IaC Workflow | Terraform with Dynamic GCP Secrets'
+name: 'IaC Workflow | Terraform'
 
 on:
   pull_request:
@@ -66,16 +66,20 @@ jobs:
 
       - name: Build dynamic_secrets.tfvars
         id: generate-tfvars
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          API_KEY: ${{ secrets.API_KEY }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
         run: |
           if [ ! -f "secret-manager-config.json" ]; then
             echo "secret-manager-config.json not found!"
             exit 1
           fi
 
-          # Get unique secrets from config
           echo "dynamic_secrets = {" > dynamic_secrets.tfvars
-          jq -r 'to_entries[] | .value[]' secret-manager-config.json | sort -u | while read secret_name; do
-            echo "  \"$secret_name\" = \"${{ secrets[$secret_name] }}\"" >> dynamic_secrets.tfvars
+          for secret_name in $(jq -r 'to_entries[] | .value[]' secret-manager-config.json | sort -u); do
+            value=$(eval echo \$$secret_name)
+            echo "  \"$secret_name\" = \"$value\"" >> dynamic_secrets.tfvars
           done
           echo "}" >> dynamic_secrets.tfvars
 
@@ -85,12 +89,9 @@ jobs:
           for folder in $FOLDER_LIST; do
             echo "Processing folder: $folder"
             cd $folder
-
             terraform fmt -recursive .
             terraform init
-
             terraform plan -var-file="../dynamic_secrets.tfvars" -out=tfplan
-
             cd -
           done
 
@@ -118,6 +119,10 @@ jobs:
           terraform_version: '1.5.7'
 
       - name: Build dynamic_secrets.tfvars
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          API_KEY: ${{ secrets.API_KEY }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
         run: |
           if [ ! -f "secret-manager-config.json" ]; then
             echo "secret-manager-config.json not found!"
@@ -125,8 +130,9 @@ jobs:
           fi
 
           echo "dynamic_secrets = {" > dynamic_secrets.tfvars
-          jq -r 'to_entries[] | .value[]' secret-manager-config.json | sort -u | while read secret_name; do
-            echo "  \"$secret_name\" = \"${{ secrets[$secret_name] }}\"" >> dynamic_secrets.tfvars
+          for secret_name in $(jq -r 'to_entries[] | .value[]' secret-manager-config.json | sort -u); do
+            value=$(eval echo \$$secret_name)
+            echo "  \"$secret_name\" = \"$value\"" >> dynamic_secrets.tfvars
           done
           echo "}" >> dynamic_secrets.tfvars
 
@@ -136,8 +142,6 @@ jobs:
           for folder in $FOLDER_LIST; do
             echo "Applying changes in folder: $folder"
             cd $folder
-
             terraform init
             terraform apply -var-file="../dynamic_secrets.tfvars" -auto-approve
-
             cd -
