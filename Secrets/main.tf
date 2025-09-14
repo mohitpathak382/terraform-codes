@@ -1,16 +1,28 @@
-resource "google_secret_manager_secret" "my_secret" {
-  project  = "quantiphi-test-470710"
-  secret_id = "test133"
-  replication{
+variable "dynamic_secrets" {
+  description = "Map of secrets to create in Secret Manager"
+  type        = map(string)
+  default     = {}
+}
+
+# Create the secrets
+resource "google_secret_manager_secret" "dynamic_secrets" {
+  for_each  = var.dynamic_secrets
+
+  project   = "quantiphi-test-470710"
+  secret_id = each.key
+
+  replication {
     user_managed {
       replicas {
         location = "us-central1"
       }
-  }
+    }
   }
 }
 
-resource "google_secret_manager_secret_version" "my_secret_version" {
-  secret      = google_secret_manager_secret.my_secret.id
-  secret_data = var.mysql_root_password
+# Upload the corresponding secret values
+resource "google_secret_manager_secret_version" "dynamic_secret_versions" {
+  for_each     = var.dynamic_secrets
+  secret       = google_secret_manager_secret.dynamic_secrets[each.key].id
+  secret_data  = each.value
 }
