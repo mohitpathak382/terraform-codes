@@ -2,8 +2,12 @@ name: 'IaC Workflow | Terraform'
 
 on:
   pull_request:
-    branches: [main]
-    types: [opened, closed, synchronize]
+    branches:
+      - main  # Trigger when a PR targets main branch
+    types:
+      - opened
+      - closed
+      - synchronize
 
 permissions:
   contents: read
@@ -15,11 +19,11 @@ env:
   ACCESS_TOKEN_LIFETIME: 900s
   GCP_PROJECT: 'quantiphi-test-470710'
 
-
 jobs:
   terraform_plan:
     name: 'Terraform | Plan'
     runs-on: ubuntu-latest
+
     outputs:
       changed_files: ${{ steps.changed-dirs-files.outputs.FOLDER_LIST }}
 
@@ -45,66 +49,100 @@ jobs:
         with:
           files_ignore: |
             .github/**
-            Modules/**
+            bobm-landing-zone/Modules/**
           files: |
             **.tf
-            **.tfvars
+            **.tfvars  
 
       - name: Get list of changed top-level directories
         id: changed-dirs-files
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
-          echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr ' ' '\n' | sed 's|\(.*\)/.*|\1|' | sort -u > changed-dirs.txt
-          echo "FOLDER_LIST=$(cat changed-dirs.txt | tr '\n' ' ')" >> $GITHUB_OUTPUT
+          echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | sed 's|\(.*\)/.*|\1|' | sort -u > changed-dirs.txt
+          FOLDER=$(cat changed-dirs.txt | sort -u | tr '\n' ' ')
+          echo "FOLDER_LIST=$FOLDER"
+          echo "FOLDER_LIST=$FOLDER" >> $GITHUB_OUTPUT
 
-      - name: Create GCP Secrets & Generate terraform.tfvars
+      - name: Generate Dynamic Secrets Configuration
         run: |
-          echo "Reading secrets from secret-list.yaml..."
-          
-          if [ ! -f secret-list.yaml ]; then
-            echo "❌ secret-list.yaml not found!"
-            exit 1
-          fi
+          # Create a Python script to generate terraform.tfvars with secrets
+          cat > generate_secrets.py << 'EOF'
+          import json
+          import os
 
-          echo "" > terraform.tfvars
+          def main():
+              try:
+                  with open('secrets-config.json', 'r') as f:
+                      config = json.load(f)
+              except FileNotFoundError:
+                  print("No secrets-config.json found, skipping dynamic secrets")
+                  return
 
-          # Extract secrets list from YAML
-          SECRET_LIST=$(yq '.secrets[]' secret-list.yaml)
+              tfvars_content = []
 
-          for secret in $SECRET_LIST; do
-            tf_var_name=$(echo "$secret" | tr '[:upper:]' '[:lower:]')
-            secret_env_var="GCP_SM_${secret}"
+              # Static secrets from GitHub Secrets
+              static_secrets = {
+                  'my_preshared_secret': '${{ secrets.MY_PRESHARED_SECRET }}',
+                  'palo_ssh_key': '${{ secrets.TF_VAR_PALO_SSH_KEY }}',
+                  'mysql_root_password': '${{ secrets.MYSQL_ROOT_PASSWORD }}',
+                  'postgres_root_password': '${{ secrets.POSTGRES_ROOT_PASSWORD }}'
+              }
 
-            # GitHub secrets can only be accessed via ${{ secrets.<name> }}
-            echo "::add-mask::${{ secrets[format('GCP_SM_%s', secret)] }}"
-            secret_value="${{ secrets[format('GCP_SM_%s', secret)] }}"
+              for key, value in static_secrets.items():
+                  if value and value != '${{ secrets. }}':
+                      tfvars_content.append(f'{key} = "{value}"')
 
-            if [ -z "$secret_value" ]; then
-              echo "⚠️ Secret GCP_SM_${secret} not found in GitHub Secrets"
-              continue
-            fi
+              # Dynamic secrets from JSON config
+              for app, secrets_list in config.items():
+                  print(f"Processing secrets for application: {app}")
+                  for secret_name in secrets_list:
+                      secret_value = os.environ.get(f'SECRET_{secret_name}', '')
+                      if secret_value:
+                          tf_var_name = secret_name.lower()
+                          tfvars_content.append(f'{tf_var_name} = "{secret_value}"')
+                          print(f"Added {tf_var_name} to terraform variables")
+                      else:
+                          print(f"Warning: Secret {secret_name} not found in environment")
 
-            echo "$tf_var_name = \"$secret_value\"" >> terraform.tfvars
+              # Write terraform.tfvars file
+              with open('terraform.tfvars', 'w') as f:
+                  f.write('\n'.join(tfvars_content))
 
-            # Create/update in GCP Secret Manager
-            if ! gcloud secrets describe "$secret" --project="${GCP_PROJECT}" >/dev/null 2>&1; then
-              echo "🆕 Creating secret $secret"
-              gcloud secrets create "$secret" --replication-policy="automatic" --project="${GCP_PROJECT}"
-            fi
+              # Create variables_generated.tf file
+              variables_tf_content = []
+              for line in tfvars_content:
+                  var_name = line.split(' = ')[0]
+                  variables_tf_content.append(f'''
+                    variable "{var_name}" {{
+                      description = "Secret variable for {var_name}"
+                      type        = string
+                      sensitive   = true
+                    }}
+                    ''')
+              with open('variables_generated.tf', 'w') as f:
+                  f.write('\n'.join(variables_tf_content))
 
-            echo -n "$secret_value" | gcloud secrets versions add "$secret" --data-file=- --project="${GCP_PROJECT}"
-          done
+          if __name__ == "__main__":
+              main()
+          EOF
 
-          echo "✅ Generated terraform.tfvars:"
-          cat terraform.tfvars
-        shell: bash
+          python generate_secrets.py
+        env:
+          # GitHub secrets with SECRET_ prefix for Python script
+          SECRET_SKY_EYE_DB_PASSWORD: ${{ secrets.SKY_EYE_DB_PASSWORD }}
+          SECRET_SKY_EYE_NACOS_PASSWORD: ${{ secrets.SKY_EYE_NACOS_PASSWORD }}
+          # Add additional secrets as needed here
 
       - name: Terraform Init & Plan
         run: |
           FOLDER_LIST=$(echo "${{ steps.changed-dirs-files.outputs.FOLDER_LIST }}" | tr ' ' '\n')
           for folder in $FOLDER_LIST; do
-            echo "Running Terraform in $folder"
-            cd "$folder"
-            cp ../terraform.tfvars . || true
+            echo "Processing folder: $folder"
+            cd $folder
+            cp ../terraform.tfvars . 2>/dev/null || echo "No terraform.tfvars to copy"
+            cp ../variables_generated.tf . 2>/dev/null || echo "No variables_generated.tf to copy"
+            terraform fmt -recursive .
             terraform init
             terraform plan -var-file="terraform.tfvars" -out=tfplan
             cd -
@@ -121,7 +159,7 @@ jobs:
         uses: actions/checkout@v4
 
       - id: auth
-        uses: google-github-actions/auth@v2.0.0
+        uses: google-github-actions/auth@v2.0.0  
         with:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
           service_account: ${{ env.SA }}
@@ -132,13 +170,61 @@ jobs:
         with:
           terraform_version: '1.5.7'
 
+      - name: Generate Dynamic Secrets Configuration
+        run: |
+          # Repeat the secrets generation script for apply job
+          cat > generate_secrets.py << 'EOF'
+          import json
+          import os
+
+          def main():
+              try:
+                  with open('secrets-config.json', 'r') as f:
+                      config = json.load(f)
+              except FileNotFoundError:
+                  print("No secrets-config.json found, skipping dynamic secrets")
+                  return
+
+              tfvars_content = []
+
+              static_secrets = {
+                  'my_preshared_secret': '${{ secrets.MY_PRESHARED_SECRET }}',
+                  'palo_ssh_key': '${{ secrets.TF_VAR_PALO_SSH_KEY }}',
+                  'mysql_root_password': '${{ secrets.MYSQL_ROOT_PASSWORD }}',
+                  'postgres_root_password': '${{ secrets.POSTGRES_ROOT_PASSWORD }}'
+              }
+
+              for key, value in static_secrets.items():
+                  if value and value != '${{ secrets. }}':
+                      tfvars_content.append(f'{key} = "{value}"')
+
+              for app, secrets_list in config.items():
+                  for secret_name in secrets_list:
+                      secret_value = os.environ.get(f'SECRET_{secret_name}', '')
+                      if secret_value:
+                          tf_var_name = secret_name.lower()
+                          tfvars_content.append(f'{tf_var_name} = "{secret_value}"')
+
+              with open('terraform.tfvars', 'w') as f:
+                  f.write('\n'.join(tfvars_content))
+
+          if __name__ == "__main__":
+              main()
+          EOF
+
+          python generate_secrets.py
+        env:
+          SECRET_SKY_EYE_DB_PASSWORD: ${{ secrets.SKY_EYE_DB_PASSWORD }}
+          SECRET_SKY_EYE_NACOS_PASSWORD: ${{ secrets.SKY_EYE_NACOS_PASSWORD }}
+
       - name: Terraform Apply
         run: |
           FOLDER_LIST=$(echo "${{ needs.terraform_plan.outputs.changed_files }}" | tr ' ' '\n')
           for folder in $FOLDER_LIST; do
-            echo "Running Terraform Apply in $folder"
-            cd "$folder"
-            cp ../terraform.tfvars . || true
+            echo "Applying changes in folder: $folder"
+            cd $folder
+            cp ../terraform.tfvars . 2>/dev/null || echo "No terraform.tfvars to copy"
+            cp ../variables_generated.tf . 2>/dev/null || echo "No variables_generated.tf to copy"
             terraform init
             terraform apply -var-file="terraform.tfvars" -auto-approve
             cd -
