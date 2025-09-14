@@ -85,7 +85,7 @@ jobs:
             
             for secret_name in $secrets_for_app; do
               # Construct GCP secret name with app prefix
-              gcp_secret_name="${secret_name}"
+              gcp_secret_name="${app}_${secret_name}"
               
               echo "Fetching secret: $gcp_secret_name from GCP Secret Manager..."
               
@@ -164,7 +164,7 @@ jobs:
             
             for secret_name in $secrets_for_app; do
               # Construct GCP secret name with app prefix
-              gcp_secret_name="${app}_${secret_name}"
+              gcp_secret_name="${app}-${secret_name}"
               
               echo "Fetching secret: $gcp_secret_name from GCP Secret Manager..."
               
