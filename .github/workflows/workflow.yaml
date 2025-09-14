@@ -15,7 +15,7 @@ permissions:
 
 env:
   WIF_PROVIDER: 'projects/288657159168/locations/global/workloadIdentityPools/githubactionspool/providers/test-github-actions'
-  SA: 'xyz-345@quantiphi-test-470710.iam.gserviceaccount.com'
+  SA: 'xyz-345@quantiphi-test-470710.iam.gserviceaccount.com' 
   ACCESS_TOKEN_LIFETIME: 900s
 
 jobs:
