@@ -138,10 +138,16 @@ jobs:
 
       - name: Terraform Apply
         run: |
+          echo "Starting Terraform Apply"
+
+          # Get changed folders from the previous job
           FOLDER_LIST=$(echo "${{ needs.terraform_plan.outputs.changed_files }}" | tr ' ' '\n')
+
           for folder in $FOLDER_LIST; do
             echo "Applying changes in folder: $folder"
             cd $folder
             terraform init
             terraform apply -var-file="../dynamic_secrets.tfvars" -auto-approve
             cd -
+          done
+
