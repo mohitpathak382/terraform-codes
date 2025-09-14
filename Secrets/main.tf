@@ -2,7 +2,7 @@ variable "dynamic_secrets" {
   description = "Map of secrets to create in Secret Manager"
   type        = map(string)
   default     = {}
-}
+} 
 
 # Create the secrets 
 resource "google_secret_manager_secret" "dynamic_secrets" {

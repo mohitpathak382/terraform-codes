@@ -2,37 +2,31 @@ name: 'IaC Workflow | Terraform'
 
 on:
   pull_request:
-    branches:
-      - main
-    types:
-      - opened
-      - closed
-      - synchronize
+    branches: [main]
+    types: [opened, closed, synchronize]
 
 permissions:
   contents: read
   id-token: write
 
 env:
-  WIF_PROVIDER: 'projects/288657159168/locations/global/workloadIdentityPools/githubactionspool/providers/test-github-actions'
-  SA: 'xyz-345@quantiphi-test-470710.iam.gserviceaccount.com'
+  WIF_PROVIDER: 'projects/713812384570/locations/global/workloadIdentityPools/gh-wif-bobm-pool-v2/providers/gh-wif-bobm-provider-v2'
+  SA: 'sa-bobm-terraform-iac@prj-bobm-shared-automation.iam.gserviceaccount.com'
   ACCESS_TOKEN_LIFETIME: 900s
-  GCP_PROJECT: 'quantiphi-test-470710'
+  GCP_PROJECT: 'prj-bobm-shared-automation'
 
 jobs:
   terraform_plan:
     name: 'Terraform | Plan'
     runs-on: ubuntu-latest
-
     outputs:
       changed_files: ${{ steps.changed-dirs-files.outputs.FOLDER_LIST }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
-        id: auth
+      - id: auth
         uses: google-github-actions/auth@v2.0.0
         with:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
@@ -50,48 +44,68 @@ jobs:
         with:
           files_ignore: |
             .github/**
-            modules/**
+            Modules/**
           files: |
             **.tf
             **.tfvars
 
       - name: Get list of changed top-level directories
         id: changed-dirs-files
-        env:
-          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
-          echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | sed 's|\(.*\)/.*|\1|' | sort -u > changed-dirs.txt
-          FOLDER=$(cat changed-dirs.txt | sort -u | tr '\n' ' ')
-          echo "FOLDER_LIST=$FOLDER" >> $GITHUB_OUTPUT
+          echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr ' ' '\n' | sed 's|\(.*\)/.*|\1|' | sort -u > changed-dirs.txt
+          echo "FOLDER_LIST=$(cat changed-dirs.txt | tr '\n' ' ')" >> $GITHUB_OUTPUT
 
-      - name: Build dynamic_secrets.tfvars
-        id: generate-tfvars
-        env:
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          API_KEY: ${{ secrets.API_KEY }}
-          SSH_KEY: ${{ secrets.SSH_KEY }}
+      - name: Create GCP Secrets & Generate terraform.tfvars
         run: |
-          if [ ! -f "secret-manager-config.json" ]; then
-            echo "secret-manager-config.json not found!"
+          echo "Reading secrets from secret-list.yaml..."
+          
+          if [ ! -f secret-list.yaml ]; then
+            echo "❌ secret-list.yaml not found!"
             exit 1
           fi
 
-          echo "dynamic_secrets = {" > dynamic_secrets.tfvars
-          for secret_name in $(jq -r 'to_entries[] | .value[]' secret-manager-config.json | sort -u); do
-            value=$(eval echo \$$secret_name)
-            echo "  \"$secret_name\" = \"$value\"" >> dynamic_secrets.tfvars
+          echo "" > terraform.tfvars
+
+          # Extract secrets list from YAML
+          SECRET_LIST=$(yq '.secrets[]' secret-list.yaml)
+
+          for secret in $SECRET_LIST; do
+            tf_var_name=$(echo "$secret" | tr '[:upper:]' '[:lower:]')
+            secret_env_var="GCP_SM_${secret}"
+
+            # GitHub secrets can only be accessed via ${{ secrets.<name> }}
+            echo "::add-mask::${{ secrets[format('GCP_SM_%s', secret)] }}"
+            secret_value="${{ secrets[format('GCP_SM_%s', secret)] }}"
+
+            if [ -z "$secret_value" ]; then
+              echo "⚠️ Secret GCP_SM_${secret} not found in GitHub Secrets"
+              continue
+            fi
+
+            echo "$tf_var_name = \"$secret_value\"" >> terraform.tfvars
+
+            # Create/update in GCP Secret Manager
+            if ! gcloud secrets describe "$secret" --project="${GCP_PROJECT}" >/dev/null 2>&1; then
+              echo "🆕 Creating secret $secret"
+              gcloud secrets create "$secret" --replication-policy="automatic" --project="${GCP_PROJECT}"
+            fi
+
+            echo -n "$secret_value" | gcloud secrets versions add "$secret" --data-file=- --project="${GCP_PROJECT}"
           done
-          echo "}" >> dynamic_secrets.tfvars
+
+          echo "✅ Generated terraform.tfvars:"
+          cat terraform.tfvars
+        shell: bash
 
       - name: Terraform Init & Plan
         run: |
           FOLDER_LIST=$(echo "${{ steps.changed-dirs-files.outputs.FOLDER_LIST }}" | tr ' ' '\n')
           for folder in $FOLDER_LIST; do
-            echo "Processing folder: $folder"
-            cd $folder
-            terraform fmt -recursive .
+            echo "Running Terraform in $folder"
+            cd "$folder"
+            cp ../terraform.tfvars . || true
             terraform init
-            terraform plan -var-file="../dynamic_secrets.tfvars" -out=tfplan
+            terraform plan -var-file="terraform.tfvars" -out=tfplan
             cd -
           done
 
@@ -102,11 +116,10 @@ jobs:
     if: ${{ github.event.pull_request.merged == true }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
-        id: auth
+      - id: auth
         uses: google-github-actions/auth@v2.0.0
         with:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
@@ -118,36 +131,14 @@ jobs:
         with:
           terraform_version: '1.5.7'
 
-      - name: Build dynamic_secrets.tfvars
-        env:
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          API_KEY: ${{ secrets.API_KEY }}
-          SSH_KEY: ${{ secrets.SSH_KEY }}
-        run: |
-          if [ ! -f "secret-manager-config.json" ]; then
-            echo "secret-manager-config.json not found!"
-            exit 1
-          fi
-
-          echo "dynamic_secrets = {" > dynamic_secrets.tfvars
-          for secret_name in $(jq -r 'to_entries[] | .value[]' secret-manager-config.json | sort -u); do
-            value=$(eval echo \$$secret_name)
-            echo "  \"$secret_name\" = \"$value\"" >> dynamic_secrets.tfvars
-          done
-          echo "}" >> dynamic_secrets.tfvars
-
       - name: Terraform Apply
         run: |
-          echo "Starting Terraform Apply"
-
-          # Get changed folders from the previous job
           FOLDER_LIST=$(echo "${{ needs.terraform_plan.outputs.changed_files }}" | tr ' ' '\n')
-
           for folder in $FOLDER_LIST; do
-            echo "Applying changes in folder: $folder"
-            cd $folder
+            echo "Running Terraform Apply in $folder"
+            cd "$folder"
+            cp ../terraform.tfvars . || true
             terraform init
-            terraform apply -var-file="../dynamic_secrets.tfvars" -auto-approve
+            terraform apply -var-file="terraform.tfvars" -auto-approve
             cd -
           done
-
