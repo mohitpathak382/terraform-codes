@@ -14,7 +14,7 @@ resource "google_compute_instance" "this" {
     access_config {}  # remove this if you only want private IP; include if you need public
   }
 
-  metadata_startup_script = var.metadata_startup_script
+  # metadata_startup_script = var.metadata_startup_script
 
   tags    = var.tags
   labels  = var.labels
