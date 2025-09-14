@@ -1,9 +1,9 @@
-name: 'IaC Workflow | Terraform'
+name: 'IaC Workflow | Terraform with Dynamic GCP Secrets'
 
 on:
   pull_request:
     branches:
-      - main  # Trigger on PRs targeting main branch
+      - main
     types:
       - opened
       - closed
@@ -17,6 +17,7 @@ env:
   WIF_PROVIDER: 'projects/288657159168/locations/global/workloadIdentityPools/githubactionspool/providers/test-github-actions'
   SA: 'xyz-345@quantiphi-test-470710.iam.gserviceaccount.com'
   ACCESS_TOKEN_LIFETIME: 900s
+  GCP_PROJECT: 'quantiphi-test-470710'
 
 jobs:
   terraform_plan:
@@ -27,10 +28,11 @@ jobs:
       changed_files: ${{ steps.changed-dirs-files.outputs.FOLDER_LIST }}
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - id: auth
+      - name: Authenticate to Google Cloud
+        id: auth
         uses: google-github-actions/auth@v2.0.0
         with:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
@@ -51,7 +53,7 @@ jobs:
             modules/**
           files: |
             **.tf
-            **.tfvars  
+            **.tfvars
 
       - name: Get list of changed top-level directories
         id: changed-dirs-files
@@ -60,23 +62,35 @@ jobs:
         run: |
           echo "${ALL_CHANGED_FILES}" | tr ' ' '\n' | sed 's|\(.*\)/.*|\1|' | sort -u > changed-dirs.txt
           FOLDER=$(cat changed-dirs.txt | sort -u | tr '\n' ' ')
-          echo "FOLDER_LIST=$FOLDER"
           echo "FOLDER_LIST=$FOLDER" >> $GITHUB_OUTPUT
 
+      - name: Build dynamic_secrets.tfvars
+        id: generate-tfvars
+        run: |
+          if [ ! -f "secret-manager-config.json" ]; then
+            echo "secret-manager-config.json not found!"
+            exit 1
+          fi
+
+          # Get unique secrets from config
+          echo "dynamic_secrets = {" > dynamic_secrets.tfvars
+          jq -r 'to_entries[] | .value[]' secret-manager-config.json | sort -u | while read secret_name; do
+            echo "  \"$secret_name\" = \"${{ secrets[$secret_name] }}\"" >> dynamic_secrets.tfvars
+          done
+          echo "}" >> dynamic_secrets.tfvars
+
       - name: Terraform Init & Plan
-        env:
-          TF_VAR_my_preshared_secret: "${{ secrets.MY_PRESHARED_SECRET }}"
-          TF_VAR_palo_ssh_key: "${{ secrets.TF_VAR_PALO_SSH_KEY }}"
-          TF_VAR_mysql_root_password: "${{ secrets.MYSQL_ROOT_PASSWORD }}"
-          TF_VAR_postgres_root_password: "${{ secrets.POSTGRES_ROOT_PASSWORD }}"
         run: |
           FOLDER_LIST=$(echo "${{ steps.changed-dirs-files.outputs.FOLDER_LIST }}" | tr ' ' '\n')
           for folder in $FOLDER_LIST; do
             echo "Processing folder: $folder"
             cd $folder
+
             terraform fmt -recursive .
             terraform init
-            terraform plan -out=tfplan
+
+            terraform plan -var-file="../dynamic_secrets.tfvars" -out=tfplan
+
             cd -
           done
 
@@ -87,11 +101,12 @@ jobs:
     if: ${{ github.event.pull_request.merged == true }}
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - id: auth
-        uses: google-github-actions/auth@v2.0.0  
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2.0.0
         with:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
           service_account: ${{ env.SA }}
@@ -102,28 +117,27 @@ jobs:
         with:
           terraform_version: '1.5.7'
 
-      - name: Terraform Apply
-        env:
-          TF_VAR_my_preshared_secret: "${{ secrets.MY_PRESHARED_SECRET }}"
-          TF_VAR_palo_ssh_key: "${{ secrets.TF_VAR_PALO_SSH_KEY }}"
-          TF_VAR_mysql_root_password: "${{ secrets.MYSQL_ROOT_PASSWORD }}"
-          TF_VAR_postgres_root_password: "${{ secrets.POSTGRES_ROOT_PASSWORD }}"
+      - name: Build dynamic_secrets.tfvars
         run: |
-          if [ -f "secrets-config.json" ]; then
-            CONFIG=$(cat secrets-config.json)
-            echo "$CONFIG" | jq -r 'keys[]' | while read app; do
-              secrets_array=$(echo "$CONFIG" | jq -r ".\"$app\"[]")
-              for secret_name in $secrets_array; do
-                echo "Processing $secret_name for Terraform"
-              done
-            done
+          if [ ! -f "secret-manager-config.json" ]; then
+            echo "secret-manager-config.json not found!"
+            exit 1
           fi
-          
+
+          echo "dynamic_secrets = {" > dynamic_secrets.tfvars
+          jq -r 'to_entries[] | .value[]' secret-manager-config.json | sort -u | while read secret_name; do
+            echo "  \"$secret_name\" = \"${{ secrets[$secret_name] }}\"" >> dynamic_secrets.tfvars
+          done
+          echo "}" >> dynamic_secrets.tfvars
+
+      - name: Terraform Apply
+        run: |
           FOLDER_LIST=$(echo "${{ needs.terraform_plan.outputs.changed_files }}" | tr ' ' '\n')
           for folder in $FOLDER_LIST; do
             echo "Applying changes in folder: $folder"
             cd $folder
+
             terraform init
-            terraform apply -auto-approve
+            terraform apply -var-file="../dynamic_secrets.tfvars" -auto-approve
+
             cd -
-          done
