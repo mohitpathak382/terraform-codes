@@ -82,7 +82,7 @@ jobs:
           echo "Required secrets found in config: $(echo $SECRET_NAMES | tr '\n' ' ')"
           
           # Build the dynamic_secrets.tfvars file
-          TFVARS_FILE="secret-manager/terraform.tfvars"
+          TFVARS_FILE="secret-manager/dynamic_secrets.auto.tfvars""
           echo "dynamic_secrets = {" > "$TFVARS_FILE"
           # echo "dynamic_secrets = {" > dynamic_secrets.tfvars
           
@@ -156,7 +156,7 @@ jobs:
           echo "Required secrets found in config: $(echo $SECRET_NAMES | tr '\n' ' ')"
           
           # Build the dynamic_secrets.tfvars file
-          TFVARS_FILE="secret-manager/terraform.tfvars"
+          TFVARS_FILE="secret-manager/dynamic_secrets.auto.tfvars""
           echo "dynamic_secrets = {" > "$TFVARS_FILE" 
           # echo "dynamic_secrets = {" > dynamic_secrets.tfvars
           
