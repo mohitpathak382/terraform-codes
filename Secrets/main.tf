@@ -1,9 +1,11 @@
 resource "google_secret_manager_secret" "my_secret" {
-  name     = "my-secret-name"
   project  = "quantiphi-test-470710"
   secret_id = "test133"
   replication{
-
+    user_managed {
+      replicas {
+        location = "us-central1"
+      }
   }
 }
 
