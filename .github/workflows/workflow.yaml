@@ -64,20 +64,42 @@ jobs:
           FOLDER=$(cat changed-dirs.txt | sort -u | tr '\n' ' ')
           echo "FOLDER_LIST=$FOLDER" >> $GITHUB_OUTPUT
 
-      - name: Build dynamic_secrets.tfvars
-        id: generate-tfvars
+      - name: Load secrets dynamically and build tfvars
+        env:
+          # Pass all GitHub secrets as JSON - GitHub will automatically mask values in logs
+          ALL_SECRETS: ${{ toJSON(secrets) }}
         run: |
           if [ ! -f "secret-manager-config.json" ]; then
             echo "secret-manager-config.json not found!"
             exit 1
           fi
 
+          echo "Discovering required secrets from configuration..."
+          
+          # Extract all unique secret names from JSON configuration
+          SECRET_NAMES=$(jq -r 'to_entries[] | .value[]' secret-manager-config.json | sort -u)
+          
+          echo "Required secrets found in config: $(echo $SECRET_NAMES | tr '\n' ' ')"
+          
+          # Build the dynamic_secrets.tfvars file
           echo "dynamic_secrets = {" > dynamic_secrets.tfvars
-          for secret_name in $(jq -r 'to_entries[] | .value[]' secret-manager-config.json | sort -u); do
-            value=$(eval echo \$$secret_name)
-            echo "  \"$secret_name\" = \"$value\"" >> dynamic_secrets.tfvars
+          
+          for secret_name in $SECRET_NAMES; do
+            # Extract secret value from the JSON using jq
+            secret_value=$(echo "$ALL_SECRETS" | jq -r --arg key "$secret_name" '.[$key] // empty')
+            
+            if [ -n "$secret_value" ] && [ "$secret_value" != "null" ] && [ "$secret_value" != "" ]; then
+              echo "  \"$secret_name\" = \"$secret_value\"" >> dynamic_secrets.tfvars
+              echo "✓ Loaded secret: $secret_name"
+            else
+              echo "⚠️  Warning: Secret $secret_name is not available in GitHub secrets"
+              echo "  \"$secret_name\" = \"\"" >> dynamic_secrets.tfvars
+            fi
           done
+          
           echo "}" >> dynamic_secrets.tfvars
+          
+          echo "Generated dynamic_secrets.tfvars successfully with $(echo $SECRET_NAMES | wc -w) secrets"
 
       - name: Terraform Init & Plan
         run: |
@@ -114,19 +136,42 @@ jobs:
         with:
           terraform_version: '1.5.7'
 
-      - name: Build dynamic_secrets.tfvars
+      - name: Load secrets dynamically and build tfvars
+        env:
+          # Pass all GitHub secrets as JSON
+          ALL_SECRETS: ${{ toJSON(secrets) }}
         run: |
           if [ ! -f "secret-manager-config.json" ]; then
             echo "secret-manager-config.json not found!"
             exit 1
           fi
 
+          echo "Discovering required secrets from configuration..."
+          
+          # Extract all unique secret names from JSON configuration
+          SECRET_NAMES=$(jq -r 'to_entries[] | .value[]' secret-manager-config.json | sort -u)
+          
+          echo "Required secrets found in config: $(echo $SECRET_NAMES | tr '\n' ' ')"
+          
+          # Build the dynamic_secrets.tfvars file
           echo "dynamic_secrets = {" > dynamic_secrets.tfvars
-          for secret_name in $(jq -r 'to_entries[] | .value[]' secret-manager-config.json | sort -u); do
-            value=$(eval echo \$$secret_name)
-            echo "  \"$secret_name\" = \"$value\"" >> dynamic_secrets.tfvars
+          
+          for secret_name in $SECRET_NAMES; do
+            # Extract secret value from the JSON using jq
+            secret_value=$(echo "$ALL_SECRETS" | jq -r --arg key "$secret_name" '.[$key] // empty')
+            
+            if [ -n "$secret_value" ] && [ "$secret_value" != "null" ] && [ "$secret_value" != "" ]; then
+              echo "  \"$secret_name\" = \"$secret_value\"" >> dynamic_secrets.tfvars
+              echo "✓ Loaded secret: $secret_name"
+            else
+              echo "⚠️  Warning: Secret $secret_name is not available in GitHub secrets"
+              echo "  \"$secret_name\" = \"\"" >> dynamic_secrets.tfvars
+            fi
           done
+          
           echo "}" >> dynamic_secrets.tfvars
+          
+          echo "Generated dynamic_secrets.tfvars successfully with $(echo $SECRET_NAMES | wc -w) secrets"
 
       - name: Terraform Apply
         run: |
