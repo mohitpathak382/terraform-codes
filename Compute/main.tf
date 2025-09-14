@@ -21,15 +21,15 @@ module "frontend" {
   labels     = var.frontend_config.labels
 }
 
-module "backend" {
-  source     = "../modules/compute_instance"
-  count      = var.backend_config.count
-  name       = "doris-be-${count.index}"
-  zone       = var.zone
-  machine_type = var.backend_config.machine_type
-  image      = data.google_compute_image.rhel.self_link
-  subnetwork = var.subnetwork
-  metadata_startup_script = file(var.backend_config.startup_script)
-  tags       = var.backend_config.tags
-  labels     = var.backend_config.labels
-}
+# module "backend" {
+#   source     = "../modules/compute_instance"
+#   count      = var.backend_config.count
+#   name       = "doris-be-${count.index}"
+#   zone       = var.zone
+#   machine_type = var.backend_config.machine_type
+#   image      = data.google_compute_image.rhel.self_link
+#   subnetwork = var.subnetwork
+#   metadata_startup_script = file(var.backend_config.startup_script)
+#   tags       = var.backend_config.tags
+#   labels     = var.backend_config.labels
+# }
