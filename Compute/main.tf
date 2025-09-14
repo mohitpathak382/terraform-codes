@@ -14,7 +14,7 @@ module "frontend" {
   name       = "doris-fe-${count.index}"
   zone       = var.zone
   machine_type = var.frontend_config.machine_type
-  image      = data.google_compute_image.rhel.self_link
+  # image      = data.google_compute_image.rhel.self_link
   subnetwork = var.subnetwork
   metadata_startup_script = file(var.frontend_config.startup_script)
   tags       = var.frontend_config.tags

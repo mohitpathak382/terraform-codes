@@ -5,7 +5,7 @@ resource "google_compute_instance" "this" {
 
   boot_disk {
     initialize_params {
-      image = var.image
+      # image = var.image
     }
   }
 

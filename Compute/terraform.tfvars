@@ -5,7 +5,7 @@ subnetwork  = "default"
 
 frontend_config = {
   count          = 3
-  # machine_type   = "e2-medium"
+  machine_type   = "n2-standard"
   startup_script = "echo 'helO' "
   
   tags           = ["frontend"]
