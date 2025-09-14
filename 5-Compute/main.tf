@@ -9,7 +9,7 @@ data "google_compute_image" "rhel" {
 }
 
 module "frontend" {
-  source     = "../../modules/compute_instance"
+  source     = "../modules/compute_instance"
   count      = var.frontend_config.count
   name       = "doris-fe-${count.index}"
   zone       = var.zone
@@ -22,7 +22,7 @@ module "frontend" {
 }
 
 module "backend" {
-  source     = "../../modules/compute_instance"
+  source     = "../modules/compute_instance"
   count      = var.backend_config.count
   name       = "doris-be-${count.index}"
   zone       = var.zone
