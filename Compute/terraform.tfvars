@@ -4,7 +4,7 @@ zone        = "us-central1-a"
 subnetwork  = "default"
 
 frontend_config = {
-  count          = 3
+  count          = 1
   machine_type   = "e2-medium"
   startup_script = ""
   
