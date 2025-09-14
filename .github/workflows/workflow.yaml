@@ -48,6 +48,7 @@ jobs:
         with:
           files_ignore: |
             .github/**
+            modules/**
           files: |
             **.tf
             **.tfvars  
