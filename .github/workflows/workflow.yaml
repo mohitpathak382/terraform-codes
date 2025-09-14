@@ -64,10 +64,7 @@ jobs:
           FOLDER=$(cat changed-dirs.txt | sort -u | tr '\n' ' ')
           echo "FOLDER_LIST=$FOLDER" >> $GITHUB_OUTPUT
 
-      - name: Load secrets dynamically and build tfvars
-        env:
-          # Pass all GitHub secrets as JSON - GitHub will automatically mask values in logs
-          ALL_SECRETS: ${{ toJSON(secrets) }}
+      - name: Load secrets from GCP Secret Manager dynamically
         run: |
           if [ ! -f "secret-manager-config.json" ]; then
             echo "secret-manager-config.json not found!"
@@ -76,30 +73,40 @@ jobs:
 
           echo "Discovering required secrets from configuration..."
           
-          # Extract all unique secret names from JSON configuration
-          SECRET_NAMES=$(jq -r 'to_entries[] | .value[]' secret-manager-config.json | sort -u)
-          
-          echo "Required secrets found in config: $(echo $SECRET_NAMES | tr '\n' ' ')"
-          
-          # Build the dynamic_secrets.tfvars file
+          # Initialize the tfvars file
           echo "dynamic_secrets = {" > dynamic_secrets.tfvars
           
-          for secret_name in $SECRET_NAMES; do
-            # Extract secret value from the JSON using jq
-            secret_value=$(echo "$ALL_SECRETS" | jq -r --arg key "$secret_name" '.[$key] // empty')
+          # Process each app in the JSON configuration
+          for app in $(jq -r 'keys[]' secret-manager-config.json); do
+            echo "Processing secrets for app: $app"
             
-            if [ -n "$secret_value" ] && [ "$secret_value" != "null" ] && [ "$secret_value" != "" ]; then
-              echo "  \"$secret_name\" = \"$secret_value\"" >> dynamic_secrets.tfvars
-              echo "✓ Loaded secret: $secret_name"
-            else
-              echo "⚠️  Warning: Secret $secret_name is not available in GitHub secrets"
-              echo "  \"$secret_name\" = \"\"" >> dynamic_secrets.tfvars
-            fi
+            # Get secrets for this app
+            secrets_for_app=$(jq -r --arg app "$app" '.[$app][]' secret-manager-config.json)
+            
+            for secret_name in $secrets_for_app; do
+              # Construct GCP secret name with app prefix
+              gcp_secret_name="${app}-${secret_name}"
+              
+              echo "Fetching secret: $gcp_secret_name from GCP Secret Manager..."
+              
+              # Fetch secret from GCP Secret Manager
+              secret_value=$(gcloud secrets versions access latest --secret="$gcp_secret_name" --project="$GCP_PROJECT" 2>/dev/null || echo "")
+              
+              if [ -n "$secret_value" ]; then
+                echo "  \"$secret_name\" = \"$secret_value\"" >> dynamic_secrets.tfvars
+                echo "✓ Loaded secret: $secret_name from $gcp_secret_name"
+              else
+                echo "⚠️  Warning: Secret $gcp_secret_name not found in GCP Secret Manager"
+                echo "  \"$secret_name\" = \"\"" >> dynamic_secrets.tfvars
+              fi
+            done
           done
           
           echo "}" >> dynamic_secrets.tfvars
           
-          echo "Generated dynamic_secrets.tfvars successfully with $(echo $SECRET_NAMES | wc -w) secrets"
+          echo "Generated dynamic_secrets.tfvars successfully"
+          echo "Summary of generated tfvars:"
+          cat dynamic_secrets.tfvars
 
       - name: Terraform Init & Plan
         run: |
@@ -136,10 +143,7 @@ jobs:
         with:
           terraform_version: '1.5.7'
 
-      - name: Load secrets dynamically and build tfvars
-        env:
-          # Pass all GitHub secrets as JSON
-          ALL_SECRETS: ${{ toJSON(secrets) }}
+      - name: Load secrets from GCP Secret Manager dynamically
         run: |
           if [ ! -f "secret-manager-config.json" ]; then
             echo "secret-manager-config.json not found!"
@@ -148,30 +152,38 @@ jobs:
 
           echo "Discovering required secrets from configuration..."
           
-          # Extract all unique secret names from JSON configuration
-          SECRET_NAMES=$(jq -r 'to_entries[] | .value[]' secret-manager-config.json | sort -u)
-          
-          echo "Required secrets found in config: $(echo $SECRET_NAMES | tr '\n' ' ')"
-          
-          # Build the dynamic_secrets.tfvars file
+          # Initialize the tfvars file
           echo "dynamic_secrets = {" > dynamic_secrets.tfvars
           
-          for secret_name in $SECRET_NAMES; do
-            # Extract secret value from the JSON using jq
-            secret_value=$(echo "$ALL_SECRETS" | jq -r --arg key "$secret_name" '.[$key] // empty')
+          # Process each app in the JSON configuration
+          for app in $(jq -r 'keys[]' secret-manager-config.json); do
+            echo "Processing secrets for app: $app"
             
-            if [ -n "$secret_value" ] && [ "$secret_value" != "null" ] && [ "$secret_value" != "" ]; then
-              echo "  \"$secret_name\" = \"$secret_value\"" >> dynamic_secrets.tfvars
-              echo "✓ Loaded secret: $secret_name"
-            else
-              echo "⚠️  Warning: Secret $secret_name is not available in GitHub secrets"
-              echo "  \"$secret_name\" = \"\"" >> dynamic_secrets.tfvars
-            fi
+            # Get secrets for this app
+            secrets_for_app=$(jq -r --arg app "$app" '.[$app][]' secret-manager-config.json)
+            
+            for secret_name in $secrets_for_app; do
+              # Construct GCP secret name with app prefix
+              gcp_secret_name="${app}-${secret_name}"
+              
+              echo "Fetching secret: $gcp_secret_name from GCP Secret Manager..."
+              
+              # Fetch secret from GCP Secret Manager
+              secret_value=$(gcloud secrets versions access latest --secret="$gcp_secret_name" --project="$GCP_PROJECT" 2>/dev/null || echo "")
+              
+              if [ -n "$secret_value" ]; then
+                echo "  \"$secret_name\" = \"$secret_value\"" >> dynamic_secrets.tfvars
+                echo "✓ Loaded secret: $secret_name from $gcp_secret_name"
+              else
+                echo "⚠️  Warning: Secret $gcp_secret_name not found in GCP Secret Manager"
+                echo "  \"$secret_name\" = \"\"" >> dynamic_secrets.tfvars
+              fi
+            done
           done
           
           echo "}" >> dynamic_secrets.tfvars
           
-          echo "Generated dynamic_secrets.tfvars successfully with $(echo $SECRET_NAMES | wc -w) secrets"
+          echo "Generated dynamic_secrets.tfvars successfully"
 
       - name: Terraform Apply
         run: |
