@@ -66,10 +66,10 @@ jobs:
 
       - name: Build dynamic_secrets.tfvars
         id: generate-tfvars
-        env:
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          API_KEY: ${{ secrets.API_KEY }}
-          SSH_KEY: ${{ secrets.SSH_KEY }}
+        # env:
+          # DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          # API_KEY: ${{ secrets.API_KEY }}
+          # SSH_KEY: ${{ secrets.SSH_KEY }}
         run: |
           if [ ! -f "secret-manager-config.json" ]; then
             echo "secret-manager-config.json not found!"
@@ -119,10 +119,10 @@ jobs:
           terraform_version: '1.5.7'
 
       - name: Build dynamic_secrets.tfvars
-        env:
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          API_KEY: ${{ secrets.API_KEY }}
-          SSH_KEY: ${{ secrets.SSH_KEY }}
+        # env:
+        #   DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        #   API_KEY: ${{ secrets.API_KEY }}
+        #   SSH_KEY: ${{ secrets.SSH_KEY }}
         run: |
           if [ ! -f "secret-manager-config.json" ]; then
             echo "secret-manager-config.json not found!"
@@ -139,9 +139,12 @@ jobs:
       - name: Terraform Apply
         run: |
           FOLDER_LIST=$(echo "${{ needs.terraform_plan.outputs.changed_files }}" | tr ' ' '\n')
+          echo "Folders to apply: $FOLDER_LIST"
+
           for folder in $FOLDER_LIST; do
             echo "Applying changes in folder: $folder"
             cd $folder
             terraform init
             terraform apply -var-file="../dynamic_secrets.tfvars" -auto-approve
             cd -
+          done
