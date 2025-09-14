@@ -4,3 +4,4 @@ terraform {
     prefix  = "terraform/state/secrets-manager"  # optional folder inside the bucket to organize states
   }
 }
+ 
