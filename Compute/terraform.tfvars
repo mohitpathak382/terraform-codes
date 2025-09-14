@@ -6,7 +6,7 @@ subnetwork  = "default"
 frontend_config = {
   count          = 3
   machine_type   = "e2-medium"
-  startup_script = "echo 'helO' "
+  startup_script = ""
   
   tags           = ["frontend"]
   labels         = {
