@@ -12,6 +12,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  pull-requests: write
 
 env:
   WIF_PROVIDER: 'projects/288657159168/locations/global/workloadIdentityPools/githubactionspool/providers/test-github-actions'
@@ -43,6 +44,12 @@ jobs:
         with:
           terraform_version: '1.5.7'
           terraform_wrapper: true
+
+      - name: Post PR comment
+        uses: borchero/terraform-plan-comment@v2
+        with:
+         token: ${{ github.token }}
+         planfile: .planfile
 
       - name: Get list of changed files
         id: changed-files
