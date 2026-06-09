@@ -107,21 +107,12 @@ jobs:
         run: |
           FOLDER_LIST=$(echo "${{ steps.changed-dirs-files.outputs.FOLDER_LIST }}" | tr ' ' '\n')
 
-          if [ -z "$FOLDER_LIST" ]; then
-            echo "No Terraform folders changed."
-            exit 0
-          fi
-
           for folder in $FOLDER_LIST; do
-            echo ""
-            echo "=================================================="
-            echo "Processing folder: $folder"
-            echo "=================================================="
+
+            [ ! -f "$folder/main.tf" ] && continue
 
             (
               cd "$folder"
-
-              terraform fmt -recursive -check
 
               terraform init -input=false
 
@@ -130,18 +121,12 @@ jobs:
                 -no-color \
                 -out=tfplan
 
-              PLAN_OUTPUT=$(terraform show -no-color tfplan)
-
-              echo "$PLAN_OUTPUT"
-
-              {
-                echo "## Terraform Plan - $folder"
-                echo ""
-                echo '```terraform'
-                echo "$PLAN_OUTPUT"
-                echo '```'
-                echo ""
-              } >> "$GITHUB_STEP_SUMMARY"
+              echo "## Terraform Plan - $folder" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo '```terraform' >> "$GITHUB_STEP_SUMMARY"
+              terraform show -no-color tfplan >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
             )
           done
 
