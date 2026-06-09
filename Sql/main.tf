@@ -15,7 +15,8 @@ provider "google" {
 }
 
 module "cloudsql" {
-  source = "git::https://github.com/mohitpathak382/terraform-codes.git//modules/sql?ref=v1.0.2"
+  source = "git::https://github.com/mohitpathak382/terraform-codes.git//modules/sql?"
+  version = "v1.0.2"
 
   sql_config = var.sql_config
 }
