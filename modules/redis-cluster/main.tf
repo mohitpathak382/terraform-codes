@@ -1,10 +1,10 @@
 resource "google_redis_cluster" "cluster" {
-  name          = var.cluster.name
-  project       = var.cluster.project_id
-  shard_count   = var.cluster.shard_count
-  replica_count = var.cluster.replica_count
-  region        = var.cluster.region
-  node_type     = var.cluster.node_type
+  name                        = var.cluster.name
+  project                     = var.cluster.project_id
+  shard_count                 = var.cluster.shard_count
+  replica_count               = var.cluster.replica_count
+  region                      = var.cluster.region
+  node_type                   = var.cluster.node_type
   deletion_protection_enabled = false
   dynamic "psc_configs" {
     for_each = local.psc_configs

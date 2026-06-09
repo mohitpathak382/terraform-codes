@@ -5,10 +5,10 @@ variable "image" {}
 variable "subnetwork" {}
 # variable "metadata_startup_script" {}
 variable "tags" {
-  type = list(string)
+  type    = list(string)
   default = []
 }
 variable "labels" {
-  type = map(string)
+  type    = map(string)
   default = {}
 }

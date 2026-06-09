@@ -2,13 +2,13 @@ variable "dynamic_secrets" {
   description = "Map of secrets to create in Secret Manager"
   type        = map(string)
   default     = {}
-} 
+}
 
- 
+
 resource "google_secret_manager_secret" "dynamic_secrets" {
-  for_each  = var.dynamic_secrets
- 
-  project   = var.project_id 
+  for_each = var.dynamic_secrets
+
+  project   = var.project_id
   secret_id = each.key
 
   replication {
@@ -22,7 +22,7 @@ resource "google_secret_manager_secret" "dynamic_secrets" {
 
 # Upload the corresponding secret values
 resource "google_secret_manager_secret_version" "dynamic_secret_versions" {
-  for_each     = var.dynamic_secrets
-  secret       = google_secret_manager_secret.dynamic_secrets[each.key].id
-  secret_data  = each.value
+  for_each    = var.dynamic_secrets
+  secret      = google_secret_manager_secret.dynamic_secrets[each.key].id
+  secret_data = each.value
 }

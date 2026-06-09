@@ -12,8 +12,8 @@ resource "google_sql_database_instance" "instance" {
     disk_size         = try(var.sql_config.disk_size, 10)
 
     ip_configuration {
-      ipv4_enabled    = true
-    #   private_network = try(var.sql_config.private_network, null)
+      ipv4_enabled = true
+      #   private_network = try(var.sql_config.private_network, null)
     }
   }
 }
