@@ -45,12 +45,6 @@ jobs:
           terraform_version: '1.5.7'
           terraform_wrapper: true
 
-      - name: Post PR comment
-        uses: borchero/terraform-plan-comment@v2
-        with:
-         token: ${{ github.token }}
-         planfile: .planfile
-
       - name: Get list of changed files
         id: changed-files
         uses: tj-actions/changed-files@v44
@@ -111,18 +105,45 @@ jobs:
           echo "Generated dynamic_secrets.tfvars successfully with $(echo $SECRET_NAMES | wc -w) secrets"
 
       - name: Terraform Init & Plan
-
+        shell: bash
         run: |
           FOLDER_LIST=$(echo "${{ steps.changed-dirs-files.outputs.FOLDER_LIST }}" | tr ' ' '\n')
+
+          if [ -z "$FOLDER_LIST" ]; then
+            echo "No Terraform folders changed."
+            exit 0
+          fi
+
           for folder in $FOLDER_LIST; do
+            echo "========================================="
             echo "Processing folder: $folder"
-            cd $folder
-            terraform fmt -recursive .
-            terraform init
-            terraform plan -out=tfplan
-            echo "The Plan outputs:"
-            echo "${{ steps.plan.outputs.stdout }}"
-            cd -
+            echo "========================================="
+
+            (
+              cd "$folder"
+
+              terraform fmt -recursive -check
+
+              terraform init -input=false
+
+              terraform plan -input=false -no-color -out=tfplan
+
+              PLAN_OUTPUT=$(terraform show -no-color tfplan)
+
+              echo ""
+              echo "========== PLAN OUTPUT: $folder =========="
+              echo "$PLAN_OUTPUT"
+              echo "=========================================="
+
+              {
+                echo "## Terraform Plan: $folder"
+                echo ""
+                echo '```terraform'
+                echo "$PLAN_OUTPUT"
+                echo '```'
+                echo ""
+              } >> "$GITHUB_STEP_SUMMARY"
+            )
           done
 
   terraform_apply:
