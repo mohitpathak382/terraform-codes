@@ -1,7 +1,7 @@
-project_id = "test-470710"
-region     = "us-central1"
-zone       = "us-central1-a"
-subnetwork = "default"
+project_id  = "test-470710"
+region      = "us-central1"
+zone        = "us-central1-a"
+subnetwork  = "default"
 
 frontend_config = {
   count        = 1
