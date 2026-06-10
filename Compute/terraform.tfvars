@@ -1,4 +1,4 @@
-project_id = "quantiphi-test-470710"
+project_id = "test-470710"
 region     = "us-central1"
 zone       = "us-central1-a"
 subnetwork = "default"
