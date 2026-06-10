@@ -2,13 +2,13 @@
 # IP aliasing, Binary Authorization, and Workload Identity integration.
 
 resource "google_container_cluster" "pvt-cluster" {
-  project    = var.gke_config.project_id     # GCP project where the cluster will be deployed
-  location   = var.gke_config.region         # GCP region for the cluster
-  name       = var.gke_config.name           # Name of the GKE cluster
+  project  = var.gke_config.project_id # GCP project where the cluster will be deployed
+  location = var.gke_config.region     # GCP region for the cluster
+  name     = var.gke_config.name       # Name of the GKE cluster
 
   # VPC configuration
-  network    = var.gke_config.network        # VPC network to host the cluster
-  subnetwork = var.gke_config.subnetwork     # Subnetwork for cluster nodes and IP aliasing
+  network    = var.gke_config.network    # VPC network to host the cluster
+  subnetwork = var.gke_config.subnetwork # Subnetwork for cluster nodes and IP aliasing
 
   # Set the GKE release channel (e.g., RAPID, REGULAR, STABLE) to control feature rollout cadence
   release_channel {

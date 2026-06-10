@@ -12,10 +12,10 @@ variable "subnetwork" {}
 
 variable "frontend_config" {
   type = object({
-    count             = number
-    machine_type      = string
+    count        = number
+    machine_type = string
     # startup_script    = string
-    tags              = list(string)
-    labels            = map(string)
+    tags   = list(string)
+    labels = map(string)
   })
 }

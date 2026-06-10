@@ -4,12 +4,12 @@ zone        = "us-central1-a"
 subnetwork  = "default"
 
 frontend_config = {
-  count          = 1
-  machine_type   = "e2-medium"
+  count        = 1
+  machine_type = "e2-medium"
   # startup_script = ""
-  
-  tags           = ["frontend"]
-  labels         = {
+
+  tags = ["frontend"]
+  labels = {
     role = "frontend"
   }
-} 
+}
