@@ -17,9 +17,9 @@ permissions:
 
 env:
   WIF_PROVIDER: 'projects/288657159168/locations/global/workloadIdentityPools/githubactionspool/providers/test-github-actions'
-  SA: 'xyz-345@quantiphi-test-470710.iam.gserviceaccount.com'
+  SA: 'xyz-345@test-470710.iam.gserviceaccount.com'
   ACCESS_TOKEN_LIFETIME: 900s
-  GCP_PROJECT: 'quantiphi-test-470710'
+  GCP_PROJECT: 'test-470710'
 
 jobs:
   terraform_plan:
@@ -131,16 +131,9 @@ jobs:
           fi
 
           for folder in $FOLDER_LIST; do
-
-            if [ ! -f "$folder/main.tf" ]; then
-              echo "Skipping $folder (not a Terraform root module)"
-              continue
-            fi
-
             echo "=================================================="
             echo "Processing folder: $folder"
             echo "=================================================="
-
             (
               cd "$folder"
 
@@ -163,8 +156,6 @@ jobs:
           done
 
           cp "$PLAN_FILE" terraform-plan.txt
-
-          cat terraform-plan.txt >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publish PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
